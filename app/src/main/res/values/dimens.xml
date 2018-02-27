@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="recyclerViewItemHeight">100dp</dimen>
+    <dimen name="recyclerViewItemPaddingHorizontal">2dp</dimen>
+    <dimen name="recyclerViewItemPaddingVertical">2dp</dimen>
+    <dimen name="recyclerViewStartMargin">0dp</dimen>
+    <dimen name="recyclerViewLeftMargin">0dp</dimen>
+    <dimen name="recyclerViewElementTextSize">14sp</dimen>
+</resources>

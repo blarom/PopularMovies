@@ -1,4 +1,16 @@
 <resources>
     <string name="app_name">PopularMovies</string>
     <string name="image">image</string>
+    <string name="default_keyword">default</string>
+
+    <string name="pref_sort_order_popular_label">By Popularity</string>
+    <string name="pref_sort_order_popular">sort_order_popular</string>
+
+    <string name="pref_sort_order_top_rated_label">By Top Rated</string>
+    <string name="pref_sort_order_top_rated">sort_order_top_rated</string>
+
+    <string name="pref_preferred_sort_order_key">sort_order</string>
+    <string name="pref_preferred_sort_order_label">Sort Order</string>
+
+    <string name="settings">Settings</string>
 </resources>
