@@ -3,33 +3,20 @@ package com.popularmovies;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
-import android.support.v4.widget.ContentLoadingProgressBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.GridLayoutManager;
-import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.support.v7.widget.helper.ItemTouchHelper;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.EditText;
-import android.widget.ImageView;
 import android.widget.ProgressBar;
-import android.widget.TextView;
-
 import com.google.gson.Gson;
-import com.squareup.picasso.Picasso;
-
 import java.io.IOException;
-import java.util.List;
-
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -41,7 +28,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private static final String movieDbAPIkey = "21740cac46494cd78e017c4889c27f05";
     private static final int WEB_SEARCH_LOADER = 101;
-    private static final String WEB_SEARCH_LOADER_EXTRA = "web_search_extra";
+    private static final String SELECTED_MOVIE_TITLE = "selected_movie_tag";
+    private static final String SELECTED_POSTER_PATH = "selected_poster_path";
+    private static final String SELECTED_PLOT_SYNOPSIS = "selected_plot_synopsis";
+    private static final String SELECTED_USER_RATING = "selected_user_rating";
+    private static final String SELECTED_RELEASE_DATE = "selected_release_date";
     MovieList movieList;
     private ProgressBar mLoadingIndicator;
     private RecyclerView mMoviesRecycleView;
@@ -129,9 +120,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             mMoviesRecycleViewAdapter = new MoviesRecycleViewAdapter(this, this, movieList);
             mMoviesRecycleView.setAdapter(mMoviesRecycleViewAdapter);
 
-            //List<MovieList.Results> results = movieList.getResults();
-            //String path = results.get(0).getPosterPath();
-            //updateImage(path);
         }
 
     }
@@ -173,8 +161,24 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         if (WebSearchLoader == null) loaderManager.initLoader(WEB_SEARCH_LOADER, null, this);
         else loaderManager.restartLoader(WEB_SEARCH_LOADER, null, this);
     }
-    @Override public void onListItemClick(int clickedItemIndex) {
+    @Override public void onListItemClick(MovieList.Results selectedResults) {
 
+        String movieTitle = selectedResults.getTitleValue();
+        String posterPath = selectedResults.getPosterPath();
+        String plotSynopsis = selectedResults.getOverview();
+        float userRating = selectedResults.getVoteAverage();
+        String releaseDate = selectedResults.getReleaseDate();
+
+        Bundle movieBundle = new Bundle();
+        movieBundle.putString(SELECTED_MOVIE_TITLE, movieTitle);
+        movieBundle.putString(SELECTED_POSTER_PATH, posterPath);
+        movieBundle.putString(SELECTED_PLOT_SYNOPSIS, plotSynopsis);
+        movieBundle.putFloat(SELECTED_USER_RATING, userRating);
+        movieBundle.putString(SELECTED_RELEASE_DATE, releaseDate);
+
+        Intent startDetailsActivity = new Intent(this, DetailActivity.class);
+        startDetailsActivity.putExtras(movieBundle);
+        startActivity(startDetailsActivity);
     }
     private void showRecycleViewInsteadOfLoadingIndicator() {
         mLoadingIndicator.setVisibility(View.INVISIBLE);

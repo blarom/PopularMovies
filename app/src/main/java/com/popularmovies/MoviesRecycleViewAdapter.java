@@ -26,7 +26,7 @@ public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycle
     final private ListItemClickHandler mOnClickHandler;
     private int mBiggestHolderWidth;
 
-    public MoviesRecycleViewAdapter(Context context, ListItemClickHandler listener, MovieList movieList) {
+    MoviesRecycleViewAdapter(Context context, ListItemClickHandler listener, MovieList movieList) {
         this.mContext = context;
         this.mOnClickHandler = listener;
         this.mMovieList = movieList;
@@ -51,7 +51,7 @@ public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycle
     @Override public int getItemCount() {
         return mMovieList.getResults().size();
     }
-    public void updateImageInGrid(String path, final MovieEntryViewHolder holder) {
+    private void updateImageInGrid(String path, final MovieEntryViewHolder holder) {
 
         //sizes: "w92", "w154", "w185", "w342", "w500", "w780", or "original"
         String size = "w185";
@@ -94,7 +94,7 @@ public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycle
         ConstraintLayout container;
         int element_id;
 
-        public MovieEntryViewHolder(View itemView) {
+        MovieEntryViewHolder(View itemView) {
             super(itemView);
             container = itemView.findViewById(R.id.recyclerViewItemLayout);
             imageDescriptionInRecycleView = itemView.findViewById(R.id.imageDescription);
@@ -104,12 +104,14 @@ public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycle
 
         @Override
         public void onClick(View view) {
-            //int clickedPosition = getAdapterPosition();
-            mOnClickHandler.onListItemClick((int) view.getTag());
+            int clickedPosition = getAdapterPosition();
+            List<MovieList.Results> results = mMovieList.getResults();
+            MovieList.Results selectedResults = results.get(clickedPosition);
+            mOnClickHandler.onListItemClick(selectedResults);
         }
     }
 
     public interface ListItemClickHandler {
-        void onListItemClick(int clickedItemIndex);
+        void onListItemClick(MovieList.Results selectedResults);
     }
 }
