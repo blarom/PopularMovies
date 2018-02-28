@@ -13,4 +13,9 @@
     <string name="pref_preferred_sort_order_label">Sort Order</string>
 
     <string name="settings">Settings</string>
+    <string name="Title">Title</string>
+    <string name="Rating">Rating:&#160;</string>
+    <string name="Released">Released:&#160;</string>
+    <string name="Synopsis">Synopsis</string>
+    <string name="failedToGetMoviesFromInternet">Failed to retrieve movies online.</string>
 </resources>

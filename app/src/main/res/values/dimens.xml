@@ -6,4 +6,11 @@
     <dimen name="recyclerViewStartMargin">0dp</dimen>
     <dimen name="recyclerViewLeftMargin">0dp</dimen>
     <dimen name="recyclerViewElementTextSize">14sp</dimen>
+    <dimen name="DetailActivityTitleSize">22sp</dimen>
+    <dimen name="DetailActivityVerticalSpacing">8dp</dimen>
+    <dimen name="DetailsActivityImageHorizontalMargin">50dp</dimen>
+    <dimen name="DetailsActivitySynopsisHorizontalMargin">16dp</dimen>
+    <dimen name="DetailActivitySynopsisVertcalMargin">16dp</dimen>
+    <dimen name="DetailsActivitySynopsisLabelSize">16dp</dimen>
+    <dimen name="DetailsActivityImageWidth">200dp</dimen>
 </resources>

@@ -7,6 +7,7 @@ import android.preference.PreferenceManager;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
@@ -15,6 +16,8 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
+import android.widget.Toast;
+
 import com.google.gson.Gson;
 import java.io.IOException;
 import okhttp3.OkHttpClient;
@@ -33,20 +36,29 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private static final String SELECTED_PLOT_SYNOPSIS = "selected_plot_synopsis";
     private static final String SELECTED_USER_RATING = "selected_user_rating";
     private static final String SELECTED_RELEASE_DATE = "selected_release_date";
-    MovieList movieList;
+    MovieList mMovieList;
     private ProgressBar mLoadingIndicator;
     private RecyclerView mMoviesRecycleView;
     private MoviesRecycleViewAdapter mMoviesRecycleViewAdapter;
     private String mPreferredSortOrder;
+    private SwipeRefreshLayout mSwipeLayout;
+    private int mNumberOfColumns;
 
     //Lifecycle methods
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        movieList = new MovieList();
+        mMovieList = new MovieList();
         mLoadingIndicator = findViewById(R.id.loading_indicator);
         mMoviesRecycleView = findViewById(R.id.movies_recycler_view);
+        mSwipeLayout = findViewById(R.id.swipe_container);
+        mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                loadMoviesGrid();
+            }
+        });
 
         showLoadingIndicatorInsteadOfRecycleView();
 
@@ -102,24 +114,36 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                 try {
                     movieDbQueryResult = getMovieDbJSON(request);
                 } catch (IOException e) {
+                    Toast.makeText(getContext(),getString(R.string.failedToGetMoviesFromInternet), Toast.LENGTH_SHORT).show();
                     e.printStackTrace();
                 }
 
                 Gson movieDbJGson = new Gson();
 
-                movieList = movieDbJGson.fromJson(movieDbQueryResult, MovieList.class);
+                mMovieList = movieDbJGson.fromJson(movieDbQueryResult, MovieList.class);
+
+                if (mMovieList.getResults().size() == 0) Toast.makeText(getContext(),getString(R.string.failedToGetMoviesFromInternet), Toast.LENGTH_SHORT).show();
 
                 return null;
             }
         };
     }
     @Override public void onLoadFinished(Loader<String> loader, String data) {
-        if (movieList != null) {
+        if (mMovieList != null) {
 
             showRecycleViewInsteadOfLoadingIndicator();
-            mMoviesRecycleViewAdapter = new MoviesRecycleViewAdapter(this, this, movieList);
-            mMoviesRecycleView.setAdapter(mMoviesRecycleViewAdapter);
 
+            mMoviesRecycleViewAdapter = new MoviesRecycleViewAdapter(this, this, mMovieList);
+            mMoviesRecycleViewAdapter.notifyDataSetChanged();
+
+            //mMoviesRecycleView.invalidate();
+            //mMoviesRecycleView.setLayoutManager(new GridLayoutManager(this, mNumberOfColumns));
+            mMoviesRecycleView.setAdapter(mMoviesRecycleViewAdapter);
+            mMoviesRecycleView.getLayoutManager().scrollToPosition(0);
+
+            //TODO Tried all kinds of things, can't fix issue of recyclerview loading at the 8th image on second refresh and then no showing at all on 3rd refresh
+
+            mSwipeLayout.setRefreshing(false);
         }
 
     }
@@ -148,10 +172,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     //RecyclerView methods
     public void setupGridRecyclerView() {
-        int numberOfColumns = 2;
-        mMoviesRecycleView.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
+        mNumberOfColumns = 2;
+        mMoviesRecycleView.setLayoutManager(new GridLayoutManager(this, mNumberOfColumns));
         //mMoviesRecycleView.setHasFixedSize(true);
-        mMoviesRecycleViewAdapter = new MoviesRecycleViewAdapter(this, this, movieList);
+        mMoviesRecycleViewAdapter = new MoviesRecycleViewAdapter(this, this, mMovieList);
         mMoviesRecycleView.setAdapter(mMoviesRecycleViewAdapter);
         //mMoviesRecycleView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
     }

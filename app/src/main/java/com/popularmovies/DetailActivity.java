@@ -1,8 +1,12 @@
 package com.popularmovies;
 
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.ScaleDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 
 import com.squareup.picasso.Picasso;
 
@@ -30,11 +34,21 @@ public class DetailActivity extends AppCompatActivity {
 
 
         //Getting the views
+        final LinearLayout container = findViewById(R.id.container);
         ImageView imageView = findViewById(R.id.imageView);
 
         //sizes: "w92", "w154", "w185", "w342", "w500", "w780", or "original"
         String size = "w185";
-        Picasso.with(getApplicationContext()).load("http://image.tmdb.org/t/p/" + size + "/" + posterPath).into(imageView);
+        Picasso.with(getApplicationContext())
+                .load("http://image.tmdb.org/t/p/" + size + "/" + posterPath)
+                .resize(10000, 800)
+                .centerInside()
+                .into(imageView);
+
+        ((TextView) findViewById(R.id.title_value)).setText(movieTitle);
+        ((TextView) findViewById(R.id.synopsis_value)).setText(plotSynopsis);
+        ((TextView) findViewById(R.id.rating_value)).setText(Float.toString(userRating));
+        ((TextView) findViewById(R.id.release_date_value)).setText(releaseDate);
 
     }
 }
