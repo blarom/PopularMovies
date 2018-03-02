@@ -1,13 +1,10 @@
 package com.popularmovies;
 
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.res.Resources;
 import android.graphics.drawable.Drawable;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.widget.RecyclerView;
-import android.util.DisplayMetrics;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -21,15 +18,15 @@ import java.util.List;
 
 public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycleViewAdapter.MovieEntryViewHolder>  {
 
-    private MovieList mMovieList;
+    private List<MovieList.Results> mMovieResultsList;
     private Context mContext;
     final private ListItemClickHandler mOnClickHandler;
     private int mBiggestHolderWidth;
 
-    MoviesRecycleViewAdapter(Context context, ListItemClickHandler listener, MovieList movieList) {
+    MoviesRecycleViewAdapter(Context context, ListItemClickHandler listener, List<MovieList.Results> movieResultsList) {
         this.mContext = context;
         this.mOnClickHandler = listener;
-        this.mMovieList = movieList;
+        this.mMovieResultsList = movieResultsList;
     }
 
     @Override public MovieEntryViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -39,17 +36,16 @@ public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycle
         return new MovieEntryViewHolder(view);
     }
     @Override public void onBindViewHolder(MovieEntryViewHolder holder, int position) {
-        List<MovieList.Results> results = mMovieList.getResults();
 
-        String movieTitle = results.get(position).getTitleValue();
+        String movieTitle = mMovieResultsList.get(position).getTitleValue();
         TextView textView = holder.imageDescriptionInRecycleView;
         textView.setText(movieTitle);
 
-        String posterPath = results.get(position).getPosterPath();
+        String posterPath = mMovieResultsList.get(position).getPosterPath();
         updateImageInGrid(posterPath, holder);
     }
     @Override public int getItemCount() {
-        return mMovieList.getResults().size();
+        return mMovieResultsList.size();
     }
     private void updateImageInGrid(String path, final MovieEntryViewHolder holder) {
 
@@ -92,7 +88,6 @@ public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycle
         TextView imageDescriptionInRecycleView;
         ImageView imageInRecycleView;
         ConstraintLayout container;
-        int element_id;
 
         MovieEntryViewHolder(View itemView) {
             super(itemView);
@@ -105,8 +100,7 @@ public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycle
         @Override
         public void onClick(View view) {
             int clickedPosition = getAdapterPosition();
-            List<MovieList.Results> results = mMovieList.getResults();
-            MovieList.Results selectedResults = results.get(clickedPosition);
+            MovieList.Results selectedResults = mMovieResultsList.get(clickedPosition);
             mOnClickHandler.onListItemClick(selectedResults);
         }
     }

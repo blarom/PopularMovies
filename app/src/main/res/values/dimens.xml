@@ -5,7 +5,7 @@
     <dimen name="recyclerViewItemPaddingVertical">2dp</dimen>
     <dimen name="recyclerViewStartMargin">0dp</dimen>
     <dimen name="recyclerViewLeftMargin">0dp</dimen>
-    <dimen name="recyclerViewElementTextSize">14sp</dimen>
+    <dimen name="recyclerViewElementTextSize">16sp</dimen>
     <dimen name="DetailActivityTitleSize">22sp</dimen>
     <dimen name="DetailActivityVerticalSpacing">8dp</dimen>
     <dimen name="DetailsActivityImageHorizontalMargin">50dp</dimen>

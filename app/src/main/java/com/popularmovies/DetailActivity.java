@@ -1,7 +1,5 @@
 package com.popularmovies;
 
-import android.graphics.drawable.Drawable;
-import android.graphics.drawable.ScaleDrawable;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.widget.ImageView;
@@ -34,7 +32,6 @@ public class DetailActivity extends AppCompatActivity {
 
 
         //Getting the views
-        final LinearLayout container = findViewById(R.id.container);
         ImageView imageView = findViewById(R.id.imageView);
 
         //sizes: "w92", "w154", "w185", "w342", "w500", "w780", or "original"

@@ -17,5 +17,5 @@
     <string name="Rating">Rating:&#160;</string>
     <string name="Released">Released:&#160;</string>
     <string name="Synopsis">Synopsis</string>
-    <string name="failedToGetMoviesFromInternet">Failed to retrieve movies online.</string>
+    <string name="failedToAccessOnlineResources">Failed to access online resources.</string>
 </resources>

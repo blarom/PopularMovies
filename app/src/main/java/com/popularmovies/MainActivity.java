@@ -1,8 +1,12 @@
 package com.popularmovies;
 
 import android.annotation.SuppressLint;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -20,6 +24,10 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import java.io.IOException;
+import java.net.InetAddress;
+import java.util.ArrayList;
+import java.util.List;
+
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -29,7 +37,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         SharedPreferences.OnSharedPreferenceChangeListener {
 
 
-    private static final String movieDbAPIkey = "21740cac46494cd78e017c4889c27f05";
+    private static final String movieDbAPIkey = "123456789";
     private static final int WEB_SEARCH_LOADER = 101;
     private static final String SELECTED_MOVIE_TITLE = "selected_movie_tag";
     private static final String SELECTED_POSTER_PATH = "selected_poster_path";
@@ -43,6 +51,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private String mPreferredSortOrder;
     private SwipeRefreshLayout mSwipeLayout;
     private int mNumberOfColumns;
+    private List<MovieList.Results> mMovieResultsListAfterUpdate;
 
     //Lifecycle methods
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -50,6 +59,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         setContentView(R.layout.activity_main);
 
         mMovieList = new MovieList();
+        mMovieResultsListAfterUpdate = new ArrayList<>();
         mLoadingIndicator = findViewById(R.id.loading_indicator);
         mMoviesRecycleView = findViewById(R.id.movies_recycler_view);
         mSwipeLayout = findViewById(R.id.swipe_container);
@@ -100,6 +110,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             protected void onStartLoading() {
                 //if (args == null) return;
                 showLoadingIndicatorInsteadOfRecycleView();
+                if (!isInternetAvailable(getContext())) tellUserInternetIsUnavailable();
                 forceLoad();
             }
 
@@ -107,22 +118,26 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             public String loadInBackground() {
                 String movieDbQueryResult = "";
 
-                String request = "";
-                if (mPreferredSortOrder.equals(getString(R.string.pref_sort_order_popular))) request = getPopularMoviesAPILink();
-                else if (mPreferredSortOrder.equals(getString(R.string.pref_sort_order_top_rated))) request = getTopRatedMoviesAPILink();
+                if (isInternetAvailable(getContext())) {
+                    String request = "";
+                    if (mPreferredSortOrder.equals(getString(R.string.pref_sort_order_popular)))
+                        request = getPopularMoviesAPILink();
+                    else if (mPreferredSortOrder.equals(getString(R.string.pref_sort_order_top_rated)))
+                        request = getTopRatedMoviesAPILink();
 
-                try {
-                    movieDbQueryResult = getMovieDbJSON(request);
-                } catch (IOException e) {
-                    Toast.makeText(getContext(),getString(R.string.failedToGetMoviesFromInternet), Toast.LENGTH_SHORT).show();
-                    e.printStackTrace();
+                    try {
+                        movieDbQueryResult = getMovieDbJSON(request);
+                    } catch (IOException e) {
+                        tellUserInternetIsUnavailable();
+                        e.printStackTrace();
+                    }
+
+                    Gson movieDbJGson = new Gson();
+
+                    mMovieList = movieDbJGson.fromJson(movieDbQueryResult, MovieList.class);
+
+                    if (mMovieList.getResults().size() == 0) tellUserInternetIsUnavailable();
                 }
-
-                Gson movieDbJGson = new Gson();
-
-                mMovieList = movieDbJGson.fromJson(movieDbQueryResult, MovieList.class);
-
-                if (mMovieList.getResults().size() == 0) Toast.makeText(getContext(),getString(R.string.failedToGetMoviesFromInternet), Toast.LENGTH_SHORT).show();
 
                 return null;
             }
@@ -133,15 +148,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
             showRecycleViewInsteadOfLoadingIndicator();
 
-            mMoviesRecycleViewAdapter = new MoviesRecycleViewAdapter(this, this, mMovieList);
+            mMovieResultsListAfterUpdate.clear();
+            mMovieResultsListAfterUpdate.addAll(mMovieList.getResults());
             mMoviesRecycleViewAdapter.notifyDataSetChanged();
 
-            //mMoviesRecycleView.invalidate();
-            //mMoviesRecycleView.setLayoutManager(new GridLayoutManager(this, mNumberOfColumns));
-            mMoviesRecycleView.setAdapter(mMoviesRecycleViewAdapter);
-            mMoviesRecycleView.getLayoutManager().scrollToPosition(0);
-
-            //TODO Tried all kinds of things, can't fix issue of recyclerview loading at the 8th image on second refresh and then no showing at all on 3rd refresh
+            //mMoviesRecycleViewAdapter = new MoviesRecycleViewAdapter(this, this, mMovieList);
+            //mMoviesRecycleView.getLayoutManager().scrollToPosition(0);
 
             mSwipeLayout.setRefreshing(false);
         }
@@ -169,13 +181,26 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private String getTopRatedMoviesAPILink() {
         return "https://api.themoviedb.org/3/movie/top_rated?page=1&language=en-US&api_key=" + movieDbAPIkey;
     }
+    private void tellUserInternetIsUnavailable() {
+        Toast.makeText(getApplicationContext(), getString(R.string.failedToAccessOnlineResources), Toast.LENGTH_SHORT).show();
+    }
+    public boolean isInternetAvailable(Context context) {
+        //adapted from https://stackoverflow.com/questions/43315393/android-internet-connection-timeout
+        final ConnectivityManager connMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+
+        NetworkInfo activeNetworkInfo = null;
+        if (connMgr != null) activeNetworkInfo = connMgr.getActiveNetworkInfo();
+
+        // return true if connected to the internet
+        return activeNetworkInfo != null;
+    }
 
     //RecyclerView methods
     public void setupGridRecyclerView() {
         mNumberOfColumns = 2;
         mMoviesRecycleView.setLayoutManager(new GridLayoutManager(this, mNumberOfColumns));
         //mMoviesRecycleView.setHasFixedSize(true);
-        mMoviesRecycleViewAdapter = new MoviesRecycleViewAdapter(this, this, mMovieList);
+        mMoviesRecycleViewAdapter = new MoviesRecycleViewAdapter(this, this, mMovieResultsListAfterUpdate);
         mMoviesRecycleView.setAdapter(mMoviesRecycleViewAdapter);
         //mMoviesRecycleView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
     }
