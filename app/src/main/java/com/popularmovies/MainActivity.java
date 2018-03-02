@@ -29,7 +29,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         SharedPreferences.OnSharedPreferenceChangeListener {
 
 
-    private static final String movieDbAPIkey = "21740cac46494cd78e017c4889c27f05";
+    private static final String movieDbAPIkey = "123456789";
     private static final int WEB_SEARCH_LOADER = 101;
     private static final String SELECTED_MOVIE_TITLE = "selected_movie_tag";
     private static final String SELECTED_POSTER_PATH = "selected_poster_path";
