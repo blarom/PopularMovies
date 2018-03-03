@@ -37,11 +37,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private static final String movieDbAPIkey = BuildConfig.API_KEY;
     private static final int WEB_SEARCH_LOADER = 101;
-    private static final String SELECTED_MOVIE_TITLE = "selected_movie_tag";
-    private static final String SELECTED_POSTER_PATH = "selected_poster_path";
-    private static final String SELECTED_PLOT_SYNOPSIS = "selected_plot_synopsis";
-    private static final String SELECTED_USER_RATING = "selected_user_rating";
-    private static final String SELECTED_RELEASE_DATE = "selected_release_date";
+    private static final String MOVIE_RESULTS_PARCEL = "movie_results_parcel";
     MovieList mMovieList;
     private ProgressBar mLoadingIndicator;
     private RecyclerView mMoviesRecycleView;
@@ -210,6 +206,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
     @Override public void onListItemClick(MovieList.Results selectedResults) {
 
+        /*
+        //Wrote this code before it was suggested to implement Parcelable, which is a much more elegant solution :)
+
         String movieTitle = selectedResults.getTitleValue();
         String posterPath = selectedResults.getPosterPath();
         String plotSynopsis = selectedResults.getOverview();
@@ -222,9 +221,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         movieBundle.putString(SELECTED_PLOT_SYNOPSIS, plotSynopsis);
         movieBundle.putFloat(SELECTED_USER_RATING, userRating);
         movieBundle.putString(SELECTED_RELEASE_DATE, releaseDate);
+        */
 
         Intent startDetailsActivity = new Intent(this, DetailActivity.class);
-        startDetailsActivity.putExtras(movieBundle);
+        startDetailsActivity.putExtra(MOVIE_RESULTS_PARCEL, selectedResults);
         startActivity(startDetailsActivity);
     }
     private void showRecycleViewInsteadOfLoadingIndicator() {
