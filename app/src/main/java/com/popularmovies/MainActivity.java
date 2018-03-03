@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
-import android.os.Looper;
 import android.preference.PreferenceManager;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -24,7 +23,6 @@ import android.widget.Toast;
 
 import com.google.gson.Gson;
 import java.io.IOException;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -37,7 +35,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         SharedPreferences.OnSharedPreferenceChangeListener {
 
 
-    private static final String movieDbAPIkey = "123456789";
+    private static final String movieDbAPIkey = BuildConfig.API_KEY;
     private static final int WEB_SEARCH_LOADER = 101;
     private static final String SELECTED_MOVIE_TITLE = "selected_movie_tag";
     private static final String SELECTED_POSTER_PATH = "selected_poster_path";
