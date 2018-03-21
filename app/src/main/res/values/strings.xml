@@ -18,4 +18,8 @@
     <string name="Released">Released:&#160;</string>
     <string name="Synopsis">Synopsis</string>
     <string name="failedToAccessOnlineResources">Failed to access online resources.</string>
+    <string name="trailers">Trailers:</string>
+    <string name="reviews">Reviews:</string>
+    <string name="no_reviews">No Reviews at this time.</string>
+    <string name="no_trailers">No Available trailers.</string>
 </resources>

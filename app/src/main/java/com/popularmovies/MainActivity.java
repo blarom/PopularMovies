@@ -1,11 +1,8 @@
 package com.popularmovies;
 
 import android.annotation.SuppressLint;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.net.ConnectivityManager;
-import android.net.NetworkInfo;
 import android.preference.PreferenceManager;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
@@ -19,24 +16,21 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ProgressBar;
-import android.widget.Toast;
 
 import com.google.gson.Gson;
+import com.popularmovies.data.*;
+import com.popularmovies.utilities.NetworkUtilities;
+import com.popularmovies.utilities.TheMovieDbUtilities;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<String>,
         MoviesRecycleViewAdapter.ListItemClickHandler,
         SharedPreferences.OnSharedPreferenceChangeListener {
 
-
-    private static final String movieDbAPIkey = BuildConfig.API_KEY;
-    private static final int WEB_SEARCH_LOADER = 101;
+    private static final int MOVIE_LIST_LOADER = 101;
     private static final String MOVIE_RESULTS_PARCEL = "movie_results_parcel";
     MovieList mMovieList;
     private ProgressBar mLoadingIndicator;
@@ -104,7 +98,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             protected void onStartLoading() {
                 //if (args == null) return;
                 showLoadingIndicatorInsteadOfRecycleView();
-                if (!isInternetAvailable(getContext())) tellUserInternetIsUnavailable();
+                if (!NetworkUtilities.isInternetAvailable(getContext())) NetworkUtilities.tellUserInternetIsUnavailable(getApplicationContext());
                 forceLoad();
             }
 
@@ -112,25 +106,24 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             public String loadInBackground() {
                 String movieDbQueryResult = "";
 
-                if (isInternetAvailable(getContext())) {
-                    String request = "";
+                if (NetworkUtilities.isInternetAvailable(getContext())) {
+                    String requestUrl = "";
                     if (mPreferredSortOrder.equals(getString(R.string.pref_sort_order_popular)))
-                        request = getPopularMoviesAPILink();
+                        requestUrl = TheMovieDbUtilities.getPopularMoviesAPILink();
                     else if (mPreferredSortOrder.equals(getString(R.string.pref_sort_order_top_rated)))
-                        request = getTopRatedMoviesAPILink();
+                        requestUrl = TheMovieDbUtilities.getTopRatedMoviesAPILink();
 
                     try {
-                        movieDbQueryResult = getMovieDbJSON(request);
+                        movieDbQueryResult = NetworkUtilities.getJson(requestUrl);
                     } catch (IOException e) {
-                        tellUserInternetIsUnavailable();
+                        NetworkUtilities.tellUserInternetIsUnavailable(getApplicationContext());
                         e.printStackTrace();
                     }
 
-                    Gson movieDbJGson = new Gson();
+                    Gson movieDbGson = new Gson();
 
-                    mMovieList = movieDbJGson.fromJson(movieDbQueryResult, MovieList.class);
+                    mMovieList = movieDbGson.fromJson(movieDbQueryResult, MovieList.class);
 
-                    if (mMovieList.getResults().size() == 0) tellUserInternetIsUnavailable();
                 }
 
                 return null;
@@ -141,6 +134,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         if (mMovieList != null) {
 
             showRecycleViewInsteadOfLoadingIndicator();
+
+            if (mMovieList.getResults().size() == 0) NetworkUtilities.tellUserInternetIsUnavailable(getApplicationContext());
 
             mMovieResultsListAfterUpdate.clear();
             mMovieResultsListAfterUpdate.addAll(mMovieList.getResults());
@@ -156,38 +151,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     @Override public void onLoaderReset(Loader<String> loader) {
 
     }
-    private String getMovieDbJSON(String url) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-
-        Request request = new Request.Builder()
-                .url(url)
-                .build();
-
-        Response response = client.newCall(request).execute();
-        if (response.body() != null) {
-            return response.body().string();
-        }
-        else return "";
-    }
-    private String getPopularMoviesAPILink() {
-        return "https://api.themoviedb.org/3/movie/popular?page=1&language=en-US&api_key=" + movieDbAPIkey;
-    }
-    private String getTopRatedMoviesAPILink() {
-        return "https://api.themoviedb.org/3/movie/top_rated?page=1&language=en-US&api_key=" + movieDbAPIkey;
-    }
-    private void tellUserInternetIsUnavailable() {
-        Toast.makeText(getApplicationContext(), getString(R.string.failedToAccessOnlineResources), Toast.LENGTH_SHORT).show();
-    }
-    public boolean isInternetAvailable(Context context) {
-        //adapted from https://stackoverflow.com/questions/43315393/android-internet-connection-timeout
-        final ConnectivityManager connMgr = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
-
-        NetworkInfo activeNetworkInfo = null;
-        if (connMgr != null) activeNetworkInfo = connMgr.getActiveNetworkInfo();
-
-        // return true if connected to the internet
-        return activeNetworkInfo != null;
-    }
 
     //RecyclerView methods
     public void setupGridRecyclerView() {
@@ -200,28 +163,11 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
     public void loadMoviesGrid() {
         LoaderManager loaderManager = getSupportLoaderManager();
-        Loader<String> WebSearchLoader = loaderManager.getLoader(WEB_SEARCH_LOADER);
-        if (WebSearchLoader == null) loaderManager.initLoader(WEB_SEARCH_LOADER, null, this);
-        else loaderManager.restartLoader(WEB_SEARCH_LOADER, null, this);
+        Loader<String> WebSearchLoader = loaderManager.getLoader(MOVIE_LIST_LOADER);
+        if (WebSearchLoader == null) loaderManager.initLoader(MOVIE_LIST_LOADER, null, this);
+        else loaderManager.restartLoader(MOVIE_LIST_LOADER, null, this);
     }
     @Override public void onListItemClick(MovieList.Results selectedResults) {
-
-        /*
-        //Wrote this code before it was suggested to implement Parcelable, which is a much more elegant solution :)
-
-        String movieTitle = selectedResults.getTitleValue();
-        String posterPath = selectedResults.getPosterPath();
-        String plotSynopsis = selectedResults.getOverview();
-        float userRating = selectedResults.getVoteAverage();
-        String releaseDate = selectedResults.getReleaseDate();
-
-        Bundle movieBundle = new Bundle();
-        movieBundle.putString(SELECTED_MOVIE_TITLE, movieTitle);
-        movieBundle.putString(SELECTED_POSTER_PATH, posterPath);
-        movieBundle.putString(SELECTED_PLOT_SYNOPSIS, plotSynopsis);
-        movieBundle.putFloat(SELECTED_USER_RATING, userRating);
-        movieBundle.putString(SELECTED_RELEASE_DATE, releaseDate);
-        */
 
         Intent startDetailsActivity = new Intent(this, DetailActivity.class);
         startDetailsActivity.putExtra(MOVIE_RESULTS_PARCEL, selectedResults);

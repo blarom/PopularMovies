@@ -11,6 +11,7 @@
     <dimen name="DetailsActivityImageHorizontalMargin">50dp</dimen>
     <dimen name="DetailsActivitySynopsisHorizontalMargin">16dp</dimen>
     <dimen name="DetailActivitySynopsisVertcalMargin">16dp</dimen>
-    <dimen name="DetailsActivitySynopsisLabelSize">16dp</dimen>
+    <dimen name="DetailsActivitySynopsisLabelSize">16sp</dimen>
     <dimen name="DetailsActivityImageWidth">200dp</dimen>
+    <dimen name="trailer_list_item_height">100dp</dimen>
 </resources>

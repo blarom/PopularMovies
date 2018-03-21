@@ -1,103 +1,197 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView
     xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
-    tools:context="com.popularmovies.DetailActivity"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    tools:context="com.popularmovies.DetailActivity">
 
-<LinearLayout
-    android:id="@+id/container"
-    android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:orientation="vertical">
-
-    <ImageView
-        android:id="@+id/imageView"
-        android:layout_marginTop="@dimen/DetailActivityVerticalSpacing"
-        android:layout_gravity="center_horizontal"
-        android:scaleType="fitCenter"
-        android:layout_marginStart="@dimen/DetailsActivityImageHorizontalMargin"
-        android:layout_marginEnd="@dimen/DetailsActivityImageHorizontalMargin"
+    <LinearLayout
+        android:id="@+id/details_linear_container"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:contentDescription="@string/image"/>
-
-    <TextView
-        android:layout_marginTop="@dimen/DetailActivityVerticalSpacing"
-        android:id="@+id/title_value"
-        android:textSize="@dimen/DetailActivityTitleSize"
-        android:textStyle="bold"
-        android:layout_gravity="center_horizontal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/Title"/>
-
-    <LinearLayout
-        android:layout_marginTop="@dimen/DetailActivityVerticalSpacing"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:orientation="horizontal">
+        android:orientation="vertical"
+        android:gravity="start">
 
         <TextView
-            android:id="@+id/rating_label"
-            android:layout_width="wrap_content"
+            android:id="@+id/title_value"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/Rating"/>
-
-        <TextView
-            android:id="@+id/rating_value"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/default_keyword"/>
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_marginTop="@dimen/DetailActivityVerticalSpacing"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_gravity="center_horizontal"
-        android:orientation="horizontal">
-
-        <TextView
-            android:id="@+id/release_date_label"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/Released"/>
-
-        <TextView
-            android:id="@+id/release_date_value"
             android:layout_gravity="center_horizontal"
-            android:layout_width="wrap_content"
+            android:layout_marginEnd="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:text="@string/Title"
+            android:textAlignment="center"
+            android:textSize="@dimen/DetailActivityTitleSize"
+            android:textStyle="bold"/>
+
+        <android.support.constraint.ConstraintLayout
+            android:id="@+id/details_constraint_container"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <android.support.constraint.Guideline
+                android:id="@+id/guideline"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                app:layout_constraintGuide_percent="0.4" />
+
+            <ImageView
+                android:id="@+id/imageView"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginEnd="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:contentDescription="@string/image"
+                android:scaleType="fitCenter"
+                app:layout_constraintEnd_toStartOf="@+id/guideline"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"/>
+
+            <TextView
+                android:id="@+id/rating_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/Rating"
+                app:layout_constraintStart_toStartOf="@+id/release_date_label"
+                app:layout_constraintTop_toBottomOf="@+id/release_date_label"/>
+
+            <TextView
+                android:id="@+id/rating_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/default_keyword"
+                app:layout_constraintBottom_toBottomOf="@+id/rating_label"
+                app:layout_constraintStart_toStartOf="@+id/release_date_value"
+                app:layout_constraintTop_toTopOf="@+id/rating_label"/>
+
+            <TextView
+                android:id="@+id/release_date_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:text="@string/Released"
+                app:layout_constraintStart_toStartOf="@+id/guideline"
+                app:layout_constraintTop_toTopOf="@+id/imageView"
+                android:layout_marginLeft="8dp"/>
+
+            <TextView
+                android:id="@+id/release_date_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginLeft="8dp"
+                android:layout_marginStart="8dp"
+                android:text="@string/default_keyword"
+                app:layout_constraintBottom_toBottomOf="@+id/release_date_label"
+                app:layout_constraintStart_toEndOf="@+id/release_date_label"
+                app:layout_constraintTop_toTopOf="@+id/release_date_label"
+                app:layout_constraintVertical_bias="1.0"/>
+
+        </android.support.constraint.ConstraintLayout>
+
+        <TextView
+            android:id="@+id/synopsis_label"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginLeft="8dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="16dp"
+            android:text="@string/Synopsis"
+            android:gravity="start"
+            android:textAlignment="viewStart"
+            android:textAllCaps="true"
+            android:textSize="@dimen/DetailsActivitySynopsisLabelSize"
+            android:textStyle="bold"/>
+
+        <TextView
+            android:id="@+id/synopsis_value"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginLeft="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginRight="16dp"
+            android:gravity="start"
+            android:textAlignment="viewStart"
             android:text="@string/default_keyword"/>
 
+        <ProgressBar
+            android:id="@+id/trailers_loading_indicator"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:visibility="invisible"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent"/>
+
+        <LinearLayout
+            android:id="@+id/dynamic_layouts_container"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <TextView
+                android:id="@+id/trailers_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginLeft="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:text="@string/trailers"
+                android:textAllCaps="true"
+                android:textSize="@dimen/DetailsActivitySynopsisLabelSize"
+                android:textStyle="bold"/>
+
+            <android.support.v7.widget.RecyclerView
+                android:id="@+id/trailers_container"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_marginLeft="16dp"
+                android:layout_marginStart="16dp"
+                android:layout_marginEnd="16dp"
+                android:layout_marginRight="16dp"
+                android:layout_marginTop="16dp"
+                android:columnCount="3"
+                android:orientation="vertical"/>
+
+            <TextView
+                android:id="@+id/reviews_label"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginLeft="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="20dp"
+                android:text="@string/reviews"
+                android:textAllCaps="true"
+                android:textSize="@dimen/DetailsActivitySynopsisLabelSize"
+                android:textStyle="bold"/>
+
+            <LinearLayout
+                android:id="@+id/reviews_container"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginLeft="8dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"
+                android:layout_marginRight="8dp"
+                android:layout_marginTop="16dp"
+                android:orientation="vertical"/>
+        </LinearLayout>
+
     </LinearLayout>
-
-    <TextView
-        android:id="@+id/synopsis_label"
-        android:textStyle="bold"
-        android:textAllCaps="true"
-        android:textSize="@dimen/DetailsActivitySynopsisLabelSize"
-        android:layout_marginTop="@dimen/DetailActivitySynopsisVertcalMargin"
-        android:layout_gravity="center_horizontal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/Synopsis"/>
-
-    <TextView
-        android:id="@+id/synopsis_value"
-        android:gravity="center_horizontal"
-        android:layout_marginTop="@dimen/DetailActivityVerticalSpacing"
-        android:layout_marginStart="@dimen/DetailsActivitySynopsisHorizontalMargin"
-        android:layout_marginEnd="@dimen/DetailsActivitySynopsisHorizontalMargin"
-        android:layout_gravity="center_horizontal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/default_keyword"/>
-
-
-</LinearLayout>
 </ScrollView>

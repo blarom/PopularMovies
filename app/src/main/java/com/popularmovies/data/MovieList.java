@@ -1,4 +1,4 @@
-package com.popularmovies;
+package com.popularmovies.data;
 
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -10,7 +10,7 @@ import java.util.List;
 
 public class MovieList implements Parcelable {
 
-    MovieList() { }
+    public MovieList() { }
 
     private MovieList(Parcel in) {
         page = in.readInt();
@@ -60,10 +60,10 @@ public class MovieList implements Parcelable {
     @SerializedName("results")
     private List<Results> results = new ArrayList<>();
     public void setResults(List<Results> results) { this.results = results; }
-    List<Results> getResults() { return results; }
+    public List<Results> getResults() { return results; }
 
 
-    static class Results implements Parcelable {
+    public static class Results implements Parcelable {
 
         Results() {}
 
@@ -82,6 +82,7 @@ public class MovieList implements Parcelable {
             adult = in.readByte() != 0;
             overview = in.readString();
             release_date = in.readString();
+            reviews = in.createStringArray();
         }
 
         public static final Creator<Results> CREATOR = new Creator<Results>() {
@@ -117,6 +118,7 @@ public class MovieList implements Parcelable {
             parcel.writeByte((byte) (adult ? 1 : 0));
             parcel.writeString(overview);
             parcel.writeString(release_date);
+            parcel.writeStringArray(reviews);
         }
 
         @SerializedName("vote_count")
@@ -127,7 +129,7 @@ public class MovieList implements Parcelable {
         @SerializedName("id")
         private int id;
         public void setIdNumber(int id) { this.id = id; }
-        int getIdNumber() { return id; }
+        public int getIdNumber() { return id; }
 
         @SerializedName("video")
         private boolean video;
@@ -137,12 +139,12 @@ public class MovieList implements Parcelable {
         @SerializedName("vote_average")
         private float vote_average;
         public void setVoteAverage(float vote_average) { this.vote_average = vote_average; }
-        float getVoteAverage() { return vote_average; }
+        public float getVoteAverage() { return vote_average; }
 
         @SerializedName("title")
         private String title;
         public void setTitleValue(String title) { this.title = title; }
-        String getTitleValue() { return title; }
+        public String getTitleValue() { return title; }
 
         @SerializedName("popularity")
         private float popularity;
@@ -152,7 +154,7 @@ public class MovieList implements Parcelable {
         @SerializedName("poster_path")
         private String poster_path;
         public void setPosterPath(String poster_path) { this.poster_path = poster_path; }
-        String getPosterPath() { return poster_path; }
+        public String getPosterPath() { return poster_path; }
 
         @SerializedName("original_language")
         private String original_language;
@@ -182,12 +184,17 @@ public class MovieList implements Parcelable {
         @SerializedName("overview")
         private String overview;
         public void setOverview(String overview) { this.overview = overview; }
-        String getOverview() { return overview; }
+        public String getOverview() { return overview; }
 
         @SerializedName("release_date")
         private String release_date;
         public void setReleaseDate(String release_date) { this.release_date = release_date; }
-        String getReleaseDate() { return release_date; }
+        public String getReleaseDate() { return release_date; }
+
+        @SerializedName("reviews")
+        private String[] reviews;
+        public void setReviews(String release_date) { this.reviews = reviews; }
+        String[] getReviewse() { return reviews; }
 
     }
 }
