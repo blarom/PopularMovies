@@ -12,19 +12,19 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.popularmovies.data.MovieList;
+import com.popularmovies.data.Movies;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
 public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycleViewAdapter.MovieEntryViewHolder>  {
 
-    private List<MovieList.Results> mMovieResultsList;
+    private List<Movies.Results> mMovieResultsList;
     private Context mContext;
     final private ListItemClickHandler mOnClickHandler;
     private int mBiggestHolderWidth;
 
-    MoviesRecycleViewAdapter(Context context, ListItemClickHandler listener, List<MovieList.Results> movieResultsList) {
+    MoviesRecycleViewAdapter(Context context, ListItemClickHandler listener, List<Movies.Results> movieResultsList) {
         this.mContext = context;
         this.mOnClickHandler = listener;
         this.mMovieResultsList = movieResultsList;
@@ -101,12 +101,12 @@ public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycle
         @Override
         public void onClick(View view) {
             int clickedPosition = getAdapterPosition();
-            MovieList.Results selectedResults = mMovieResultsList.get(clickedPosition);
+            Movies.Results selectedResults = mMovieResultsList.get(clickedPosition);
             mOnClickHandler.onListItemClick(selectedResults);
         }
     }
 
     public interface ListItemClickHandler {
-        void onListItemClick(MovieList.Results selectedResults);
+        void onListItemClick(Movies.Results selectedResults);
     }
 }

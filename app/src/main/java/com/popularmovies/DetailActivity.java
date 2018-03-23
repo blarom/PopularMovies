@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
@@ -20,7 +19,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
-import com.popularmovies.data.MovieList;
+import com.popularmovies.data.Movies;
 import com.popularmovies.data.Reviews;
 import com.popularmovies.data.Videos;
 import com.popularmovies.utilities.NetworkUtilities;
@@ -36,7 +35,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     private static final int MOVIE_DETAILS_LOADER = 201;
     private Videos mTrailers;
     private Reviews mReviews;
-    private MovieList.Results mSelectedResult;
+    private Movies.Results mSelectedResult;
     private boolean mLoadedTrailers;
 
     //Lifecycle methods

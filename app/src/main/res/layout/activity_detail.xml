@@ -55,24 +55,6 @@
                 app:layout_constraintTop_toTopOf="parent"/>
 
             <TextView
-                android:id="@+id/rating_label"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/Rating"
-                app:layout_constraintStart_toStartOf="@+id/release_date_label"
-                app:layout_constraintTop_toBottomOf="@+id/release_date_label"/>
-
-            <TextView
-                android:id="@+id/rating_value"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/default_keyword"
-                app:layout_constraintBottom_toBottomOf="@+id/rating_label"
-                app:layout_constraintStart_toStartOf="@+id/release_date_value"
-                app:layout_constraintTop_toTopOf="@+id/rating_label"/>
-
-            <TextView
                 android:id="@+id/release_date_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
@@ -95,6 +77,43 @@
                 app:layout_constraintStart_toEndOf="@+id/release_date_label"
                 app:layout_constraintTop_toTopOf="@+id/release_date_label"
                 app:layout_constraintVertical_bias="1.0"/>
+
+            <TextView
+                android:id="@+id/rating_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/Rating"
+                app:layout_constraintStart_toStartOf="@+id/release_date_label"
+                app:layout_constraintTop_toBottomOf="@+id/release_date_label"/>
+
+            <TextView
+                android:id="@+id/rating_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/default_keyword"
+                app:layout_constraintBottom_toBottomOf="@+id/rating_label"
+                app:layout_constraintStart_toStartOf="@+id/release_date_value"
+                app:layout_constraintTop_toTopOf="@+id/rating_label"/>
+
+            <TextView
+                android:id="@+id/favorite_label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="@string/favorite_label"
+                app:layout_constraintStart_toStartOf="@+id/rating_label"
+                app:layout_constraintTop_toBottomOf="@+id/rating_label"/>
+
+            <ImageView
+                android:id="@+id/favorite_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:src="@drawable/ic_star_border_black_24dp"
+                android:contentDescription="@string/favorite"
+                app:layout_constraintBottom_toBottomOf="@+id/favorite_label"
+                app:layout_constraintStart_toStartOf="@+id/rating_value"
+                app:layout_constraintTop_toTopOf="@+id/favorite_label"/>
 
         </android.support.constraint.ConstraintLayout>
 

@@ -12,7 +12,7 @@ public class MoviesDbHelper extends SQLiteOpenHelper {
 
 
     private static final String DATABASE_NAME = "popularmovies.db";
-    public static final int DATABASE_VERSION = 1;
+    public static final int DATABASE_VERSION = 2;
     private Context mContext;
 
     public MoviesDbHelper(Context context) {
@@ -25,19 +25,20 @@ public class MoviesDbHelper extends SQLiteOpenHelper {
         final String SQL_CREATE_KEYWORDS_TABLE = "CREATE TABLE " + MoviesDbEntry.TABLE_NAME +
                 " (" +
                 MoviesDbEntry._ID + " INTEGER PRIMARY KEY AUTOINCREMENT, " +
-                MoviesDbEntry.COLUMN_VOTE_COUNT + " TEXT NOT NULL, " +
-                MoviesDbEntry.COLUMN_TMDB_ID + " TEXT NOT NULL, " +
-                MoviesDbEntry.COLUMN_VIDEO + " TEXT NOT NULL, " +
-                MoviesDbEntry.COLUMN_VOTE_AVERAGE + " TEXT NOT NULL, " +
+                MoviesDbEntry.COLUMN_VOTE_COUNT + " INTEGER NOT NULL, " +
+                MoviesDbEntry.COLUMN_TMDB_ID + " INTEGER NOT NULL, " +
+                MoviesDbEntry.COLUMN_VIDEO + " BOOLEAN NOT NULL, " +
+                MoviesDbEntry.COLUMN_VOTE_AVERAGE + " FLOAT NOT NULL, " +
                 MoviesDbEntry.COLUMN_TITLE + " TEXT NOT NULL, " +
-                MoviesDbEntry.COLUMN_POPULARITY + " TEXT NOT NULL, " +
+                MoviesDbEntry.COLUMN_POPULARITY + " FLOAT NOT NULL, " +
                 MoviesDbEntry.COLUMN_POSTER_PATH + " TEXT NOT NULL, " +
                 MoviesDbEntry.COLUMN_ORIGINAL_LANGUAGE + " TEXT NOT NULL, " +
                 MoviesDbEntry.COLUMN_GENRE_IDS + " TEXT NOT NULL, " +
                 MoviesDbEntry.COLUMN_BACKDROP_PATH + " TEXT NOT NULL, " +
-                MoviesDbEntry.COLUMN_ADULT + " TEXT NOT NULL, " +
+                MoviesDbEntry.COLUMN_ADULT + " BOOLEAN NOT NULL, " +
                 MoviesDbEntry.COLUMN_OVERVIEW + " TEXT NOT NULL, " +
                 MoviesDbEntry.COLUMN_RELEASE_DATE + " TEXT NOT NULL" +
+                MoviesDbEntry.COLUMN_FAVORITE + " BOOLEAN NOT NULL" +
                 "); ";
 
 
@@ -50,7 +51,7 @@ public class MoviesDbHelper extends SQLiteOpenHelper {
     }
 
     // CRUD (Create, Read, Update, Delete) Operations
-    public void addMovie(MovieList.Results movie) {
+    public void addMovie(Movies.Results movie) {
         SQLiteDatabase db = this.getWritableDatabase();
 
         ContentValues values = new ContentValues();

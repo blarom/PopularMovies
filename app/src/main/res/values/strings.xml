@@ -22,4 +22,6 @@
     <string name="reviews">Reviews:</string>
     <string name="no_reviews">No Reviews at this time.</string>
     <string name="no_trailers">No Available trailers.</string>
+    <string name="favorite">favorite</string>
+    <string name="favorite_label">Favorite</string>
 </resources>

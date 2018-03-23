@@ -15,7 +15,6 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.popularmovies.data.MovieList;
 import com.popularmovies.data.Videos;
 
 import java.util.List;

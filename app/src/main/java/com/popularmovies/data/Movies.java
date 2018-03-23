@@ -8,25 +8,25 @@ import com.google.gson.annotations.SerializedName;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MovieList implements Parcelable {
+public class Movies implements Parcelable {
 
-    public MovieList() { }
+    public Movies() { }
 
-    private MovieList(Parcel in) {
+    private Movies(Parcel in) {
         page = in.readInt();
         total_results = in.readInt();
         total_pages = in.readInt();
     }
 
-    public static final Creator<MovieList> CREATOR = new Creator<MovieList>() {
+    public static final Creator<Movies> CREATOR = new Creator<Movies>() {
         @Override
-        public MovieList createFromParcel(Parcel in) {
-            return new MovieList(in);
+        public Movies createFromParcel(Parcel in) {
+            return new Movies(in);
         }
 
         @Override
-        public MovieList[] newArray(int size) {
-            return new MovieList[size];
+        public Movies[] newArray(int size) {
+            return new Movies[size];
         }
     };
 
@@ -124,7 +124,7 @@ public class MovieList implements Parcelable {
         @SerializedName("vote_count")
         private int vote_count;
         public void setVoteCount(int vote_count) { this.vote_count = vote_count; }
-        int getVoteCount() { return vote_count; }
+        public int getVoteCount() { return vote_count; }
 
         @SerializedName("id")
         private int id;
@@ -134,7 +134,7 @@ public class MovieList implements Parcelable {
         @SerializedName("video")
         private boolean video;
         public void setVideo(boolean video) { this.video = video; }
-        boolean getVideo() { return video; }
+        public boolean getVideo() { return video; }
 
         @SerializedName("vote_average")
         private float vote_average;
@@ -149,7 +149,7 @@ public class MovieList implements Parcelable {
         @SerializedName("popularity")
         private float popularity;
         public void setPopularity(float popularity) { this.popularity = popularity; }
-        float getPopularity() { return popularity; }
+        public float getPopularity() { return popularity; }
 
         @SerializedName("poster_path")
         private String poster_path;
@@ -159,27 +159,27 @@ public class MovieList implements Parcelable {
         @SerializedName("original_language")
         private String original_language;
         public void setOriginalLanguage(String original_language) { this.original_language = original_language; }
-        String getOriginalLanguage() { return original_language; }
+        public String getOriginalLanguage() { return original_language; }
 
         @SerializedName("original_title")
         private String original_title;
         public void setOriginalTitle(String original_title) { this.original_title = original_title; }
-        String getOriginalTitle() { return original_title; }
+        public String getOriginalTitle() { return original_title; }
 
         @SerializedName("genre_ids")
         private int[] genre_ids;
         public void setGenreIds(int[] genre_ids) { this.genre_ids = genre_ids; }
-        int[] getGenreIds() { return genre_ids; }
+        public int[] getGenreIds() { return genre_ids; }
 
         @SerializedName("backdrop_path")
         private String backdrop_path;
         public void setBackdropPath(String backdrop_path) { this.backdrop_path = backdrop_path; }
-        String getBackdropPath() { return backdrop_path; }
+        public String getBackdropPath() { return backdrop_path; }
 
         @SerializedName("adult")
         private boolean adult;
         public void setAdultFlag(boolean adult) { this.adult = adult; }
-        boolean getAdultFlag() { return adult; }
+        public boolean getAdultFlag() { return adult; }
 
         @SerializedName("overview")
         private String overview;
@@ -194,7 +194,7 @@ public class MovieList implements Parcelable {
         @SerializedName("reviews")
         private String[] reviews;
         public void setReviews(String release_date) { this.reviews = reviews; }
-        String[] getReviewse() { return reviews; }
+        public String[] getReviewse() { return reviews; }
 
     }
 }
