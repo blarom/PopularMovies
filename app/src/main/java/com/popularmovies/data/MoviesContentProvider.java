@@ -59,7 +59,7 @@ public class MoviesContentProvider extends ContentProvider {
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
         }
 
-        getContext().getContentResolver().notifyChange(uri, null);
+        if (getContext() != null) getContext().getContentResolver().notifyChange(uri, null);
 
         return returnUri;
     }
@@ -165,7 +165,7 @@ public class MoviesContentProvider extends ContentProvider {
         long id;
         switch(match) {
             case MOVIES:
-                id = db.update(MoviesDbContract.MoviesDbEntry.TABLE_NAME, contentValues, null, selectionArgs);
+                id = db.update(MoviesDbContract.MoviesDbEntry.TABLE_NAME, contentValues, selection, selectionArgs);
                 //if (id > 0) hasBeenUpdated = id;
                 //else throw new android.database.SQLException("Failed to update row with uri " + uri);
                 break;

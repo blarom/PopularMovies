@@ -8,4 +8,11 @@
         android:key="@string/pref_preferred_sort_order_key"
         android:title="@string/pref_preferred_sort_order_label" />
 
+    <CheckBoxPreference
+        android:defaultValue="@bool/pref_show_favorites_default"
+        android:key="@string/pref_show_favorites_key"
+        android:summaryOff="@string/pref_show_favorites_summary_off"
+        android:summaryOn="@string/pref_show_favorites_summary_on"
+        android:title="@string/pref_show_favorites_title" />
+
 </PreferenceScreen>

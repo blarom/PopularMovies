@@ -5,6 +5,7 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.v4.app.LoaderManager;
@@ -15,6 +16,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -35,12 +37,14 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final int MOVIE_LIST_LOADER = 101;
-    private static final String MOVIE_RESULTS_PARCEL = "movie_results_parcel";
+    private static final String MOVIES_CONTENT_PROVIDER_INDEX = "movies_content_provider_index";
     Movies mMovies;
     private ProgressBar mLoadingIndicator;
     private RecyclerView mMoviesRecycleView;
     private MoviesRecycleViewAdapter mMoviesRecycleViewAdapter;
     private String mPreferredSortOrder;
+    private Boolean mPreferredFavoritesShown;
+    private Cursor mListShownToUserCursor;
     private SwipeRefreshLayout mSwipeLayout;
     private int mNumberOfColumns;
     private List<Movies.Results> mMovieResultsListAfterUpdate;
@@ -82,8 +86,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         showLoadingIndicatorInsteadOfRecycleView();
 
-        setupGridRecyclerView();
         setupSharedPreferences();
+        setupGridRecyclerView();
         loadMoviesGrid();
     }
     @Override protected void onResume() {
@@ -92,6 +96,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
     @Override protected void onDestroy() {
         super.onDestroy();
+        if (mListShownToUserCursor!=null) mListShownToUserCursor.close();
         PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
     }
 
@@ -161,33 +166,41 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
             mMovieResultsListAfterUpdate.clear();
             mMovieResultsListAfterUpdate.addAll(mMovies.getResults());
-            mMoviesRecycleViewAdapter.notifyDataSetChanged();
 
             updateLocalDatabaseWithResults();
+            mListShownToUserCursor = getListShownToUser();
+            mMoviesRecycleViewAdapter.swapCursor(mListShownToUserCursor);
+            mMoviesRecycleViewAdapter.notifyDataSetChanged();
 
             mSwipeLayout.setRefreshing(false);
         }
 
     }
+    @Override public void onLoaderReset(Loader<String> loader) {
 
+    }
     private void updateLocalDatabaseWithResults() {
 
         for (int i=0; i<mMovieResultsListAfterUpdate.size(); i++) {
 
             //Query for movie in local database based on Internet results movie id
+            int tmdbId = mMovieResultsListAfterUpdate.get(i).getIdNumber();
             Cursor cursorMovies = getContentResolver().query(
                     MoviesDbContract.MoviesDbEntry.CONTENT_URI,
                     MainActivity.MOVIES_TABLE_ELEMENTS,
-                    MoviesDbContract.MoviesDbEntry.COLUMN_TMDB_ID + " = '%" + mMovieResultsListAfterUpdate.get(i).getIdNumber() + "%'",
-                    null,
+                    MoviesDbContract.MoviesDbEntry.COLUMN_TMDB_ID +" = ?",
+                    new String[]{Integer.toString(tmdbId)},
                     null);
 
-            if (cursorMovies != null) cursorMovies.close();
+            /*
+            Used for debugging
+            Log.w("PopularMoviesDebug", DatabaseUtils.dumpCursorToString(cursorMovies));
+            */
 
             //If the movie exists in the local database, update its values, otherwise create a new entry
             ContentValues contentValues = new ContentValues();
             contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_VOTE_COUNT, mMovieResultsListAfterUpdate.get(i).getVoteCount());
-            contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_TMDB_ID, mMovieResultsListAfterUpdate.get(i).getIdNumber());
+            contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_TMDB_ID, tmdbId);
             contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_VIDEO, mMovieResultsListAfterUpdate.get(i).getVideo());
             contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_VOTE_AVERAGE, mMovieResultsListAfterUpdate.get(i).getVoteAverage());
             contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_TITLE, mMovieResultsListAfterUpdate.get(i).getTitleValue());
@@ -199,34 +212,67 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_ADULT, mMovieResultsListAfterUpdate.get(i).getAdultFlag());
             contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_OVERVIEW, mMovieResultsListAfterUpdate.get(i).getOverview());
             contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_RELEASE_DATE, mMovieResultsListAfterUpdate.get(i).getReleaseDate());
-            contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_FAVORITE, false);
 
             if (cursorMovies == null || cursorMovies.getCount() < 1) {
-                contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_FAVORITE, false);
-                Uri uri = getContentResolver().insert(MoviesDbContract.MoviesDbEntry.CONTENT_URI, contentValues);
+                contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_FAVORITE, 0);
+                Uri uri = getContentResolver().insert(
+                        MoviesDbContract.MoviesDbEntry.CONTENT_URI,
+                        contentValues);
             } else {
                 int updatedRows = getContentResolver().update(
                         MoviesDbContract.MoviesDbEntry.CONTENT_URI,
                         contentValues,
-                        MoviesDbContract.MoviesDbEntry.COLUMN_TMDB_ID + " = '%" + mMovieResultsListAfterUpdate.get(i).getIdNumber() + "%'",
-                        null);
+                        MoviesDbContract.MoviesDbEntry.COLUMN_TMDB_ID + " = ?",
+                        new String[]{Integer.toString(tmdbId)});
             }
 
+            //Finally, close the cursor
+            if (cursorMovies != null) cursorMovies.close();
         }
     }
+    private Cursor getListShownToUser() {
 
-    @Override public void onLoaderReset(Loader<String> loader) {
+        Cursor cursor;
+        if (mPreferredFavoritesShown) {
+            //Query for movies in local database that have favorite = true
+            cursor = getContentResolver().query(
+                    MoviesDbContract.MoviesDbEntry.CONTENT_URI,
+                    MainActivity.MOVIES_TABLE_ELEMENTS,
+                    MoviesDbContract.MoviesDbEntry.COLUMN_FAVORITE + " = 1",
+                    null,
+                    null);
 
+        }
+        else {
+            //Get all the movies in the local database
+            cursor = getContentResolver().query(
+                    MoviesDbContract.MoviesDbEntry.CONTENT_URI,
+                    MainActivity.MOVIES_TABLE_ELEMENTS,
+                    null,
+                    null,
+                    null);
+        }
+
+        /*Used for cursor debugging
+        if (cursor != null) {
+            for (int i = 0; i < cursor.getCount(); i++) {
+                if (cursor.moveToPosition(i)) Log.w("PopularMoviesDebug", DatabaseUtils.dumpCursorToString(cursor));
+            }
+            cursor.moveToFirst();
+        }
+        */
+
+        return cursor;
     }
 
     //RecyclerView methods
     public void setupGridRecyclerView() {
         mNumberOfColumns = 2;
         mMoviesRecycleView.setLayoutManager(new GridLayoutManager(this, mNumberOfColumns));
-        //mMoviesRecycleView.setHasFixedSize(true);
-        mMoviesRecycleViewAdapter = new MoviesRecycleViewAdapter(this, this, mMovieResultsListAfterUpdate);
+        mListShownToUserCursor =  getListShownToUser();
+        mMoviesRecycleViewAdapter = new MoviesRecycleViewAdapter(this, this);
+        mMoviesRecycleViewAdapter.swapCursor(mListShownToUserCursor);
         mMoviesRecycleView.setAdapter(mMoviesRecycleViewAdapter);
-        //mMoviesRecycleView.addItemDecoration(new DividerItemDecoration(this, DividerItemDecoration.VERTICAL));
     }
     public void loadMoviesGrid() {
         LoaderManager loaderManager = getSupportLoaderManager();
@@ -234,11 +280,17 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         if (WebSearchLoader == null) loaderManager.initLoader(MOVIE_LIST_LOADER, null, this);
         else loaderManager.restartLoader(MOVIE_LIST_LOADER, null, this);
     }
-    @Override public void onListItemClick(Movies.Results selectedResults) {
+    @Override public void onListItemClick(int clickedItemIndex) {
 
-        Intent startDetailsActivity = new Intent(this, DetailActivity.class);
-        startDetailsActivity.putExtra(MOVIE_RESULTS_PARCEL, selectedResults);
-        startActivity(startDetailsActivity);
+        if (mListShownToUserCursor != null) {
+            if (!mListShownToUserCursor.moveToPosition(clickedItemIndex)) return;
+
+            int movieIdFromCursor = mListShownToUserCursor.getInt(mListShownToUserCursor.getColumnIndex(MoviesDbContract.MoviesDbEntry.COLUMN_TMDB_ID));
+
+            Intent startDetailsActivity = new Intent(this, DetailActivity.class);
+            startDetailsActivity.putExtra(MOVIES_CONTENT_PROVIDER_INDEX, movieIdFromCursor);
+            startActivity(startDetailsActivity);
+        }
     }
     private void showRecycleViewInsteadOfLoadingIndicator() {
         mLoadingIndicator.setVisibility(View.INVISIBLE);
@@ -251,16 +303,21 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     //Preferences methods
     @Override public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
-        setPreferredSortOrder(sharedPreferences);
+        setPreferredSortOrder(sharedPreferences, getString(R.string.pref_sort_order_popular));
+        setShowFavoritesPreference(sharedPreferences, getResources().getBoolean(R.bool.pref_show_favorites_default));
         showLoadingIndicatorInsteadOfRecycleView();
         loadMoviesGrid();
     }
     private void setupSharedPreferences() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        setPreferredSortOrder(sharedPreferences);
+        setPreferredSortOrder(sharedPreferences, getString(R.string.pref_sort_order_popular));
+        setShowFavoritesPreference(sharedPreferences, getResources().getBoolean(R.bool.pref_show_favorites_default));
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
     }
-    private void setPreferredSortOrder(SharedPreferences sharedPreferences) {
-        mPreferredSortOrder = sharedPreferences.getString(getString(R.string.pref_preferred_sort_order_key), getString(R.string.pref_sort_order_popular));
+    private void setPreferredSortOrder(SharedPreferences sharedPreferences, String defaultValue) {
+        mPreferredSortOrder = sharedPreferences.getString(getString(R.string.pref_preferred_sort_order_key), defaultValue);
+    }
+    private void setShowFavoritesPreference(SharedPreferences sharedPreferences, Boolean defaultValue) {
+        mPreferredFavoritesShown = sharedPreferences.getBoolean(getString(R.string.pref_show_favorites_key), defaultValue);
     }
 }

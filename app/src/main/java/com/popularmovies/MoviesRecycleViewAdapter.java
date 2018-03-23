@@ -2,6 +2,7 @@ package com.popularmovies;
 
 
 import android.content.Context;
+import android.database.Cursor;
 import android.graphics.drawable.Drawable;
 import android.support.constraint.ConstraintLayout;
 import android.support.v7.widget.RecyclerView;
@@ -13,21 +14,21 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.popularmovies.data.Movies;
+import com.popularmovies.data.MoviesDbContract;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
 
 public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycleViewAdapter.MovieEntryViewHolder>  {
 
-    private List<Movies.Results> mMovieResultsList;
     private Context mContext;
     final private ListItemClickHandler mOnClickHandler;
     private int mBiggestHolderWidth;
+    private Cursor mMoviesCursor;
 
-    MoviesRecycleViewAdapter(Context context, ListItemClickHandler listener, List<Movies.Results> movieResultsList) {
+    MoviesRecycleViewAdapter(Context context, ListItemClickHandler listener) {
         this.mContext = context;
         this.mOnClickHandler = listener;
-        this.mMovieResultsList = movieResultsList;
     }
 
     @Override public MovieEntryViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
@@ -38,15 +39,20 @@ public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycle
     }
     @Override public void onBindViewHolder(MovieEntryViewHolder holder, int position) {
 
-        String movieTitle = mMovieResultsList.get(position).getTitleValue();
-        TextView textView = holder.imageDescriptionInRecycleView;
-        textView.setText(movieTitle);
+        //Moving the cursor to the desired row and skipping the next calls if there is no such position
+        if (!mMoviesCursor.moveToPosition(position)) return;
 
-        String posterPath = mMovieResultsList.get(position).getPosterPath();
-        updateImageInGrid(posterPath, holder);
+        // Determine the values of the wanted data
+        String movieTitleFromCursor = mMoviesCursor.getString(mMoviesCursor.getColumnIndex(MoviesDbContract.MoviesDbEntry.COLUMN_TITLE));
+        String posterPathFromCursor = mMoviesCursor.getString(mMoviesCursor.getColumnIndex(MoviesDbContract.MoviesDbEntry.COLUMN_POSTER_PATH));
+
+        //Update the values in the layout
+        TextView textView = holder.imageDescriptionInRecycleView;
+        textView.setText(movieTitleFromCursor);
+        updateImageInGrid(posterPathFromCursor, holder);
     }
     @Override public int getItemCount() {
-        return mMovieResultsList.size();
+        return mMoviesCursor.getCount();
     }
     private void updateImageInGrid(String path, final MovieEntryViewHolder holder) {
 
@@ -84,6 +90,12 @@ public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycle
 
     }
 
+    void swapCursor(Cursor newCursor) {
+        if (mMoviesCursor != null) mMoviesCursor.close();
+        mMoviesCursor = newCursor;
+        if (newCursor != null) this.notifyDataSetChanged();
+    }
+
     class MovieEntryViewHolder extends RecyclerView.ViewHolder implements OnClickListener {
 
         TextView imageDescriptionInRecycleView;
@@ -101,12 +113,11 @@ public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycle
         @Override
         public void onClick(View view) {
             int clickedPosition = getAdapterPosition();
-            Movies.Results selectedResults = mMovieResultsList.get(clickedPosition);
-            mOnClickHandler.onListItemClick(selectedResults);
+            mOnClickHandler.onListItemClick(clickedPosition);
         }
     }
 
     public interface ListItemClickHandler {
-        void onListItemClick(Movies.Results selectedResults);
+        void onListItemClick(int clickedItemIndex);
     }
 }

@@ -1,6 +1,10 @@
 package com.popularmovies;
 
 import android.annotation.SuppressLint;
+import android.content.ContentValues;
+import android.content.Intent;
+import android.database.Cursor;
+import android.database.DatabaseUtils;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
@@ -11,6 +15,7 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
@@ -19,7 +24,7 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
-import com.popularmovies.data.Movies;
+import com.popularmovies.data.MoviesDbContract;
 import com.popularmovies.data.Reviews;
 import com.popularmovies.data.Videos;
 import com.popularmovies.utilities.NetworkUtilities;
@@ -31,12 +36,19 @@ import java.util.List;
 
 public class DetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<String>{
 
-    private static final String MOVIE_RESULTS_PARCEL = "movie_results_parcel";
+    private static final String MOVIES_CONTENT_PROVIDER_INDEX = "movies_content_provider_index";
     private static final int MOVIE_DETAILS_LOADER = 201;
     private Videos mTrailers;
     private Reviews mReviews;
-    private Movies.Results mSelectedResult;
     private boolean mLoadedTrailers;
+    private String mMovieTitle;
+    private String mPosterPath;
+    private String mPlotSynopsis;
+    private int mUserRating;
+    private String mReleaseDate;
+    private int mFavorite;
+    private Cursor mMovieCursor;
+    private int mMovieId;
 
     //Lifecycle methods
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -45,12 +57,41 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
 
         mLoadedTrailers = false;
 
-        mSelectedResult = getIntent().getParcelableExtra(MOVIE_RESULTS_PARCEL);
-        String movieTitle = mSelectedResult.getTitleValue();
-        final String posterPath = mSelectedResult.getPosterPath();
-        String plotSynopsis = mSelectedResult.getOverview();
-        float userRating = mSelectedResult.getVoteAverage();
-        String releaseDate = mSelectedResult.getReleaseDate();
+        //Getting the values from MainActivity
+        Intent intentThatStartedThisActivity = getIntent();
+        int tmdbId = 0;
+        if (intentThatStartedThisActivity.hasExtra(MOVIES_CONTENT_PROVIDER_INDEX)) {
+            tmdbId = intentThatStartedThisActivity.getIntExtra(MOVIES_CONTENT_PROVIDER_INDEX,0);
+        }
+
+        //Retrieving the values from the Keywords database
+        mMovieCursor = getContentResolver().query(
+                MoviesDbContract.MoviesDbEntry.CONTENT_URI,
+                MainActivity.MOVIES_TABLE_ELEMENTS,
+                MoviesDbContract.MoviesDbEntry.COLUMN_TMDB_ID +" = ?",
+                new String[]{Integer.toString(tmdbId)},
+                null);
+
+        mMovieId = 0;
+        mMovieTitle = "";
+        mPosterPath = "";
+        mPlotSynopsis ="";
+        mUserRating = 0;
+        mReleaseDate = "";
+        mFavorite = 0;
+
+        if (mMovieCursor != null) {
+            if (mMovieCursor.moveToFirst()){
+                mMovieId = mMovieCursor.getInt(mMovieCursor.getColumnIndex(MoviesDbContract.MoviesDbEntry.COLUMN_TMDB_ID));
+                mMovieTitle = mMovieCursor.getString(mMovieCursor.getColumnIndex(MoviesDbContract.MoviesDbEntry.COLUMN_TITLE));
+                mPosterPath = mMovieCursor.getString(mMovieCursor.getColumnIndex(MoviesDbContract.MoviesDbEntry.COLUMN_POSTER_PATH));
+                mPlotSynopsis = mMovieCursor.getString(mMovieCursor.getColumnIndex(MoviesDbContract.MoviesDbEntry.COLUMN_OVERVIEW));
+                mUserRating = mMovieCursor.getInt(mMovieCursor.getColumnIndex(MoviesDbContract.MoviesDbEntry.COLUMN_VOTE_AVERAGE));
+                mReleaseDate = mMovieCursor.getString(mMovieCursor.getColumnIndex(MoviesDbContract.MoviesDbEntry.COLUMN_RELEASE_DATE));
+                mFavorite = mMovieCursor.getInt(mMovieCursor.getColumnIndex(MoviesDbContract.MoviesDbEntry.COLUMN_FAVORITE));
+            }
+            mMovieCursor.close();
+        }
 
 
         //Getting the views
@@ -69,7 +110,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
                 //sizes: "w92", "w154", "w185", "w342", "w500", "w780", or "original"
                 String size = "w185";
                 Picasso.with(getApplicationContext())
-                        .load("http://image.tmdb.org/t/p/" + size + "/" + posterPath)
+                        .load("http://image.tmdb.org/t/p/" + size + "/" + mPosterPath)
                         .into(imageView, new com.squareup.picasso.Callback() {
                     @Override
                     public void onSuccess() {
@@ -92,16 +133,48 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
             }
         });
 
-        ((TextView) findViewById(R.id.title_value)).setText(movieTitle);
-        ((TextView) findViewById(R.id.synopsis_value)).setText(plotSynopsis);
-        ((TextView) findViewById(R.id.rating_value)).setText(Float.toString(userRating));
-        ((TextView) findViewById(R.id.release_date_value)).setText(releaseDate);
+        ((TextView) findViewById(R.id.title_value)).setText(mMovieTitle);
+        ((TextView) findViewById(R.id.synopsis_value)).setText(mPlotSynopsis);
+        ((TextView) findViewById(R.id.rating_value)).setText(Float.toString(mUserRating));
+        ((TextView) findViewById(R.id.release_date_value)).setText(mReleaseDate);
+
+        final ImageView favoriteImage = findViewById(R.id.favorite_image);
+        if (mFavorite == 1) {
+            favoriteImage.setImageResource(R.drawable.ic_star_black_24dp);
+        } else {
+            favoriteImage.setImageResource(R.drawable.ic_star_border_black_24dp);
+        }
+        favoriteImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                //Switch the favorite display when clicked
+                if (mFavorite == 1) {
+                    mFavorite = 0;
+                    favoriteImage.setImageResource(R.drawable.ic_star_border_black_24dp);
+
+                } else {
+                    mFavorite = 1;
+                    favoriteImage.setImageResource(R.drawable.ic_star_black_24dp);
+                }
+
+                //Update the database entry with the favorite value
+                if (mMovieCursor != null && mMovieCursor.getCount() > 0) {
+                    ContentValues contentValues = new ContentValues();
+                    contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_FAVORITE, mFavorite);
+                    int updatedRows = getContentResolver().update(
+                            MoviesDbContract.MoviesDbEntry.CONTENT_URI,
+                            contentValues,
+                            MoviesDbContract.MoviesDbEntry.COLUMN_TMDB_ID + " = ?",
+                            new String[]{Integer.toString(mMovieId)});
+                }
+            }
+        });
+
 
         loadMovieReviewsAndTrailers();
     }
-
-    @Override
-    protected void onResume() {
+    @Override protected void onResume() {
         super.onResume();
         if (mLoadedTrailers) hideLoadingIndicator();
     }
@@ -127,9 +200,9 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
                 String trailersQueryResult = "";
                 String reviewsQueryResult = "";
 
-                if (NetworkUtilities.isInternetAvailable(getContext())) {
-                    String trailersRequestUrl = TheMovieDbUtilities.getTrailersAPILink(mSelectedResult.getIdNumber());
-                    String reviewsRequestUrl = TheMovieDbUtilities.getReviewsAPILink(mSelectedResult.getIdNumber());
+                if (NetworkUtilities.isInternetAvailable(getContext()) && mMovieId != 0) {
+                    String trailersRequestUrl = TheMovieDbUtilities.getTrailersAPILink(mMovieId);
+                    String reviewsRequestUrl = TheMovieDbUtilities.getReviewsAPILink(mMovieId);
 
                     try {
                         trailersQueryResult = NetworkUtilities.getJson(trailersRequestUrl);

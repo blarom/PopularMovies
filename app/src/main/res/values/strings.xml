@@ -24,4 +24,8 @@
     <string name="no_trailers">No Available trailers.</string>
     <string name="favorite">favorite</string>
     <string name="favorite_label">Favorite</string>
+    <string name="pref_show_favorites_key">show_favorites</string>
+    <string name="pref_show_favorites_summary_off">Show all movies</string>
+    <string name="pref_show_favorites_summary_on">Show only favorites</string>
+    <string name="pref_show_favorites_title">Show favorites</string>
 </resources>
