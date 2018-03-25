@@ -5,7 +5,6 @@ import android.content.ContentValues;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.v4.app.LoaderManager;
@@ -16,7 +15,6 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -32,20 +30,22 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import butterknife.BindView;
+
 public class MainActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<String>,
         MoviesRecycleViewAdapter.ListItemClickHandler,
         SharedPreferences.OnSharedPreferenceChangeListener {
 
     private static final int MOVIE_LIST_LOADER = 101;
     private static final String MOVIES_CONTENT_PROVIDER_INDEX = "movies_content_provider_index";
+    private static final String RECYCLERVIEW_POSITION = "recyclerview_position";
+    private static final String MOVIES_RECYCLERVIEW_POSITION = "movies_recyclerview_position";
+    private static final int DETAILS_ACTIVITY_CODE = 666;
     Movies mMovies;
-    private ProgressBar mLoadingIndicator;
-    private RecyclerView mMoviesRecycleView;
     private MoviesRecycleViewAdapter mMoviesRecycleViewAdapter;
-    private String mPreferredSortOrder;
+    private String mPreferredSortType;
     private Boolean mPreferredFavoritesShown;
     private Cursor mListShownToUserCursor;
-    private SwipeRefreshLayout mSwipeLayout;
     private int mNumberOfColumns;
     private List<Movies.Results> mMovieResultsListAfterUpdate;
 
@@ -64,8 +64,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         MoviesDbContract.MoviesDbEntry.COLUMN_ADULT,
         MoviesDbContract.MoviesDbEntry.COLUMN_OVERVIEW,
         MoviesDbContract.MoviesDbEntry.COLUMN_RELEASE_DATE,
+        MoviesDbContract.MoviesDbEntry.COLUMN_LIST_TYPE,
         MoviesDbContract.MoviesDbEntry.COLUMN_FAVORITE
     };
+    private int mStoredRecyclerViewPosition;
+    private RecyclerView mMoviesRecyclerView;
+    private ProgressBar mLoadingIndicator;
 
     //Lifecycle methods
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -73,11 +77,10 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         setContentView(R.layout.activity_main);
 
         mMovies = new Movies();
-        mMovieResultsListAfterUpdate = new ArrayList<>();
+        mMoviesRecyclerView = findViewById(R.id.movies_recycler_view);
         mLoadingIndicator = findViewById(R.id.loading_indicator);
-        mMoviesRecycleView = findViewById(R.id.movies_recycler_view);
-        mSwipeLayout = findViewById(R.id.swipe_container);
-        mSwipeLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+        mMovieResultsListAfterUpdate = new ArrayList<>();
+        ((SwipeRefreshLayout) findViewById(R.id.swipe_container)).setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
                 loadMoviesGrid();
@@ -98,6 +101,29 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         super.onDestroy();
         if (mListShownToUserCursor!=null) mListShownToUserCursor.close();
         PreferenceManager.getDefaultSharedPreferences(this).unregisterOnSharedPreferenceChangeListener(this);
+    }
+    @Override public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        //Adapted from: https://stackoverflow.com/questions/27816217/how-to-save-recyclerviews-scroll-position-using-recyclerview-state
+        GridLayoutManager layoutManager = ((GridLayoutManager) mMoviesRecyclerView.getLayoutManager());
+        outState.putInt(RECYCLERVIEW_POSITION, layoutManager.findFirstVisibleItemPosition());
+    }
+    @Override public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        //Adapted from: https://stackoverflow.com/questions/27816217/how-to-save-recyclerviews-scroll-position-using-recyclerview-state
+        if(savedInstanceState != null) {
+            mStoredRecyclerViewPosition = savedInstanceState.getInt(RECYCLERVIEW_POSITION);
+            mMoviesRecyclerView.scrollToPosition(mStoredRecyclerViewPosition);
+        }
+    }
+    @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == DETAILS_ACTIVITY_CODE) {
+            if(resultCode == RESULT_OK) {
+                mStoredRecyclerViewPosition = data.getIntExtra(MOVIES_RECYCLERVIEW_POSITION, 0);
+                mMoviesRecyclerView.scrollToPosition(mStoredRecyclerViewPosition);
+            }
+        }
     }
 
     //Options Menu methods
@@ -135,9 +161,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
                 if (NetworkUtilities.isInternetAvailable(getContext())) {
                     String requestUrl = "";
-                    if (mPreferredSortOrder.equals(getString(R.string.pref_sort_order_popular)))
+                    if (mPreferredSortType.equals(getString(R.string.pref_sort_order_popular)))
                         requestUrl = TheMovieDbUtilities.getPopularMoviesAPILink();
-                    else if (mPreferredSortOrder.equals(getString(R.string.pref_sort_order_top_rated)))
+                    else if (mPreferredSortType.equals(getString(R.string.pref_sort_order_top_rated)))
                         requestUrl = TheMovieDbUtilities.getTopRatedMoviesAPILink();
 
                     try {
@@ -172,7 +198,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             mMoviesRecycleViewAdapter.swapCursor(mListShownToUserCursor);
             mMoviesRecycleViewAdapter.notifyDataSetChanged();
 
-            mSwipeLayout.setRefreshing(false);
+            ((SwipeRefreshLayout) findViewById(R.id.swipe_container)).setRefreshing(false);
         }
 
     }
@@ -212,6 +238,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_ADULT, mMovieResultsListAfterUpdate.get(i).getAdultFlag());
             contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_OVERVIEW, mMovieResultsListAfterUpdate.get(i).getOverview());
             contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_RELEASE_DATE, mMovieResultsListAfterUpdate.get(i).getReleaseDate());
+            contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_LIST_TYPE, mPreferredSortType);
 
             if (cursorMovies == null || cursorMovies.getCount() < 1) {
                 contentValues.put(MoviesDbContract.MoviesDbEntry.COLUMN_FAVORITE, 0);
@@ -233,6 +260,13 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     private Cursor getListShownToUser() {
 
         Cursor cursor;
+        String sortOrder = null;
+        if (mPreferredSortType.equals(getResources().getString(R.string.pref_sort_order_top_rated))) {
+            sortOrder = MoviesDbContract.MoviesDbEntry.COLUMN_VOTE_AVERAGE;
+        } else if (mPreferredSortType.equals(getResources().getString(R.string.pref_sort_order_popular))){
+            sortOrder = MoviesDbContract.MoviesDbEntry.COLUMN_POPULARITY;
+        }
+
         if (mPreferredFavoritesShown) {
             //Query for movies in local database that have favorite = true
             cursor = getContentResolver().query(
@@ -240,7 +274,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
                     MainActivity.MOVIES_TABLE_ELEMENTS,
                     MoviesDbContract.MoviesDbEntry.COLUMN_FAVORITE + " = 1",
                     null,
-                    null);
+                    sortOrder);
 
         }
         else {
@@ -248,9 +282,9 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             cursor = getContentResolver().query(
                     MoviesDbContract.MoviesDbEntry.CONTENT_URI,
                     MainActivity.MOVIES_TABLE_ELEMENTS,
-                    null,
-                    null,
-                    null);
+                    MoviesDbContract.MoviesDbEntry.COLUMN_LIST_TYPE +" = ?",
+                    new String[]{mPreferredSortType},
+                    sortOrder);
         }
 
         /*Used for cursor debugging
@@ -268,11 +302,12 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     //RecyclerView methods
     public void setupGridRecyclerView() {
         mNumberOfColumns = 2;
-        mMoviesRecycleView.setLayoutManager(new GridLayoutManager(this, mNumberOfColumns));
+        mMoviesRecyclerView.setLayoutManager(new GridLayoutManager(this, mNumberOfColumns));
         mListShownToUserCursor =  getListShownToUser();
         mMoviesRecycleViewAdapter = new MoviesRecycleViewAdapter(this, this);
         mMoviesRecycleViewAdapter.swapCursor(mListShownToUserCursor);
-        mMoviesRecycleView.setAdapter(mMoviesRecycleViewAdapter);
+        mMoviesRecyclerView.setAdapter(mMoviesRecycleViewAdapter);
+        mMoviesRecyclerView.scrollToPosition(mStoredRecyclerViewPosition);
     }
     public void loadMoviesGrid() {
         LoaderManager loaderManager = getSupportLoaderManager();
@@ -284,38 +319,40 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
         if (mListShownToUserCursor != null) {
             if (!mListShownToUserCursor.moveToPosition(clickedItemIndex)) return;
-
             int movieIdFromCursor = mListShownToUserCursor.getInt(mListShownToUserCursor.getColumnIndex(MoviesDbContract.MoviesDbEntry.COLUMN_TMDB_ID));
-
-            Intent startDetailsActivity = new Intent(this, DetailActivity.class);
-            startDetailsActivity.putExtra(MOVIES_CONTENT_PROVIDER_INDEX, movieIdFromCursor);
-            startActivity(startDetailsActivity);
+            startMovieDetailsActivity(movieIdFromCursor);
         }
     }
     private void showRecycleViewInsteadOfLoadingIndicator() {
         mLoadingIndicator.setVisibility(View.INVISIBLE);
-        mMoviesRecycleView.setVisibility(View.VISIBLE);
+        mMoviesRecyclerView.setVisibility(View.VISIBLE);
     }
     private void showLoadingIndicatorInsteadOfRecycleView() {
         mLoadingIndicator.setVisibility(View.VISIBLE);
-        mMoviesRecycleView.setVisibility(View.INVISIBLE);
+        mMoviesRecyclerView.setVisibility(View.INVISIBLE);
+    }
+    private void startMovieDetailsActivity(int movieIdFromCursor) {
+        Intent startDetailsActivity = new Intent(this, DetailActivity.class);
+        startDetailsActivity.putExtra(MOVIES_CONTENT_PROVIDER_INDEX, movieIdFromCursor);
+        startDetailsActivity.putExtra(MOVIES_RECYCLERVIEW_POSITION, mStoredRecyclerViewPosition);
+        startActivityForResult(startDetailsActivity, DETAILS_ACTIVITY_CODE);
     }
 
     //Preferences methods
     @Override public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String s) {
-        setPreferredSortOrder(sharedPreferences, getString(R.string.pref_sort_order_popular));
+        setPreferredSortType(sharedPreferences, getString(R.string.pref_sort_order_popular));
         setShowFavoritesPreference(sharedPreferences, getResources().getBoolean(R.bool.pref_show_favorites_default));
         showLoadingIndicatorInsteadOfRecycleView();
         loadMoviesGrid();
     }
     private void setupSharedPreferences() {
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        setPreferredSortOrder(sharedPreferences, getString(R.string.pref_sort_order_popular));
+        setPreferredSortType(sharedPreferences, getString(R.string.pref_sort_order_popular));
         setShowFavoritesPreference(sharedPreferences, getResources().getBoolean(R.bool.pref_show_favorites_default));
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
     }
-    private void setPreferredSortOrder(SharedPreferences sharedPreferences, String defaultValue) {
-        mPreferredSortOrder = sharedPreferences.getString(getString(R.string.pref_preferred_sort_order_key), defaultValue);
+    private void setPreferredSortType(SharedPreferences sharedPreferences, String defaultValue) {
+        mPreferredSortType = sharedPreferences.getString(getString(R.string.pref_preferred_sort_type_key), defaultValue);
     }
     private void setShowFavoritesPreference(SharedPreferences sharedPreferences, Boolean defaultValue) {
         mPreferredFavoritesShown = sharedPreferences.getBoolean(getString(R.string.pref_show_favorites_key), defaultValue);

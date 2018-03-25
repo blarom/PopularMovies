@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.database.Cursor;
-import android.database.DatabaseUtils;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
@@ -15,12 +14,14 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
-import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
@@ -34,10 +35,25 @@ import com.squareup.picasso.Picasso;
 import java.io.IOException;
 import java.util.List;
 
-public class DetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<String>{
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
+public class DetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<String> {
+
+    @BindView(R.id.title_value) TextView titleValueTv;
+    @BindView(R.id.synopsis_value) TextView synopsisValueTv;
+    @BindView(R.id.rating_value) TextView ratingValueTv;
+    @BindView(R.id.release_date_value) TextView releaseDateValueTv;
+    @BindView(R.id.imageView) ImageView posterIv;
+    @BindView(R.id.favorite_image) ImageView favoriteIv;
+    @BindView(R.id.dynamic_layouts_container) LinearLayout dynamicLayoutsContainerLl;
+    @BindView(R.id.trailers_loading_indicator) ProgressBar trailersLoadingIndicatorPb;
+    @BindView(R.id.trailers_container) RecyclerView trailersContainerRv;
 
     private static final String MOVIES_CONTENT_PROVIDER_INDEX = "movies_content_provider_index";
+    private static final String MOVIES_RECYCLERVIEW_POSITION = "movies_recyclerview_position";
     private static final int MOVIE_DETAILS_LOADER = 201;
+    private static final String SCROLL_POSITION = "scroll_position";
     private Videos mTrailers;
     private Reviews mReviews;
     private boolean mLoadedTrailers;
@@ -49,19 +65,82 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     private int mFavorite;
     private Cursor mMovieCursor;
     private int mMovieId;
+    private int mMoviesListPosition;
+    private int mScrollPosition;
+    private int layoutId;
+    private RecyclerView mTrailersRecyclerView;
 
     //Lifecycle methods
     @Override protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_detail);
 
+        ButterKnife.bind(this);
+
+        if (savedInstanceState != null) {
+            layoutId = savedInstanceState.getInt("layoutId", R.layout.activity_detail);
+            setContentView(layoutId);
+        }
+
         mLoadedTrailers = false;
+
+        retrieveValuesForLayout();
+        loadValuesIntoLayout();
+        loadMovieReviewsAndTrailers();
+    }
+    @Override protected void onResume() {
+        super.onResume();
+        if (mLoadedTrailers) hideLoadingIndicator();
+    }
+    @Override public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putInt(SCROLL_POSITION, findViewById(R.id.container_scrollview).getScrollY());
+        outState.putInt(MOVIES_RECYCLERVIEW_POSITION, mMoviesListPosition);
+        outState.putInt("layoutId", layoutId);
+    }
+    @Override public void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        if(savedInstanceState != null) {
+            mScrollPosition = savedInstanceState.getInt(SCROLL_POSITION);
+            findViewById(R.id.container_scrollview).setScrollY(mScrollPosition);
+            mMoviesListPosition = savedInstanceState.getInt(MOVIES_RECYCLERVIEW_POSITION);
+        }
+    }
+    @Override public void onBackPressed() {
+        super.onBackPressed();
+        Intent intent = new Intent();
+        intent.putExtra(MOVIES_RECYCLERVIEW_POSITION, mMoviesListPosition);
+        setResult(RESULT_OK, intent);
+        finish();
+    }
+    @Override public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+        }
+        return false;
+    }
+
+    public void loadMovieReviewsAndTrailers() {
+        if (mLoadedTrailers) hideLoadingIndicator();
+        else {
+            LoaderManager loaderManager = getSupportLoaderManager();
+            Loader<String> WebSearchLoader = loaderManager.getLoader(MOVIE_DETAILS_LOADER);
+            if (WebSearchLoader == null) loaderManager.initLoader(MOVIE_DETAILS_LOADER, null, this);
+            else loaderManager.restartLoader(MOVIE_DETAILS_LOADER, null, this);
+        }
+    }
+    private void retrieveValuesForLayout() {
 
         //Getting the values from MainActivity
         Intent intentThatStartedThisActivity = getIntent();
         int tmdbId = 0;
         if (intentThatStartedThisActivity.hasExtra(MOVIES_CONTENT_PROVIDER_INDEX)) {
             tmdbId = intentThatStartedThisActivity.getIntExtra(MOVIES_CONTENT_PROVIDER_INDEX,0);
+        }
+        if (intentThatStartedThisActivity.hasExtra(MOVIES_RECYCLERVIEW_POSITION)) {
+            mMoviesListPosition = intentThatStartedThisActivity.getIntExtra(MOVIES_RECYCLERVIEW_POSITION,0);
         }
 
         //Retrieving the values from the Keywords database
@@ -92,70 +171,68 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
             }
             mMovieCursor.close();
         }
+    }
+    private void loadValuesIntoLayout() {
 
-
-        //Getting the views
-        final ImageView imageView = findViewById(R.id.imageView);
-
-        //Load the image after the layout is inflated, so that the true imageView width can be measured
-        imageView.getViewTreeObserver()
+        //Load the image after the layout is inflated, so that the true posterIv width can be measured
+        posterIv.getViewTreeObserver()
                 .addOnGlobalLayoutListener(new ViewTreeObserver.OnGlobalLayoutListener() {
-            @Override
-            public void onGlobalLayout() {
-                // Ensure we call this only once
-                imageView.getViewTreeObserver().removeOnGlobalLayoutListener(this);
-
-                final int imageViewWidth = imageView.getWidth();
-
-                //sizes: "w92", "w154", "w185", "w342", "w500", "w780", or "original"
-                String size = "w185";
-                Picasso.with(getApplicationContext())
-                        .load("http://image.tmdb.org/t/p/" + size + "/" + mPosterPath)
-                        .into(imageView, new com.squareup.picasso.Callback() {
                     @Override
-                    public void onSuccess() {
-                        //Inspired from: https://stackoverflow.com/questions/34067472/update-recyclerview-items-height-after-image-was-loaded
-                        ;//After the image is loaded, get its drawable width & height, then set the imageView height accordingly
-                        Drawable drawable = imageView.getDrawable();
-                        int drawableWidth = drawable.getIntrinsicWidth();
-                        int drawableHeight = drawable.getIntrinsicHeight();
+                    public void onGlobalLayout() {
+                        // Ensure we call this only once
+                        posterIv.getViewTreeObserver().removeOnGlobalLayoutListener(this);
 
-                        int imageViewHeight = (int) (((float) drawableHeight) / ((float) drawableWidth) * ((float) imageViewWidth));
-                        imageView.setMinimumHeight(imageViewHeight);
-                        imageView.setMaxHeight(imageViewHeight);
-                    }
+                        final int imageViewWidth = posterIv.getWidth();
 
-                    @Override
-                    public void onError() {
+                        //sizes: "w92", "w154", "w185", "w342", "w500", "w780", or "original"
+                        String size = "w185";
+                        Picasso.with(getApplicationContext())
+                                .load("http://image.tmdb.org/t/p/" + size + "/" + mPosterPath)
+                                .error(R.drawable.ic_missing_image)
+                                .into(posterIv, new com.squareup.picasso.Callback() {
+                                    @Override
+                                    public void onSuccess() {
+                                        //Inspired from: https://stackoverflow.com/questions/34067472/update-recyclerview-items-height-after-image-was-loaded
+                                        ;//After the image is loaded, get its drawable width & height, then set the posterIv height accordingly
+                                        Drawable drawable = posterIv.getDrawable();
+                                        int drawableWidth = drawable.getIntrinsicWidth();
+                                        int drawableHeight = drawable.getIntrinsicHeight();
 
+                                        int imageViewHeight = (int) (((float) drawableHeight) / ((float) drawableWidth) * ((float) imageViewWidth));
+                                        posterIv.setMinimumHeight(imageViewHeight);
+                                        posterIv.setMaxHeight(imageViewHeight);
+                                    }
+
+                                    @Override
+                                    public void onError() {
+
+                                    }
+                                });
                     }
                 });
-            }
-        });
 
-        ((TextView) findViewById(R.id.title_value)).setText(mMovieTitle);
-        ((TextView) findViewById(R.id.synopsis_value)).setText(mPlotSynopsis);
-        ((TextView) findViewById(R.id.rating_value)).setText(Float.toString(mUserRating));
-        ((TextView) findViewById(R.id.release_date_value)).setText(mReleaseDate);
+        titleValueTv.setText(mMovieTitle);
+        synopsisValueTv.setText(mPlotSynopsis);
+        ratingValueTv.setText(Float.toString(mUserRating));
+        releaseDateValueTv.setText(mReleaseDate);
 
-        final ImageView favoriteImage = findViewById(R.id.favorite_image);
         if (mFavorite == 1) {
-            favoriteImage.setImageResource(R.drawable.ic_star_black_24dp);
+            favoriteIv.setImageResource(R.drawable.ic_star_black_24dp);
         } else {
-            favoriteImage.setImageResource(R.drawable.ic_star_border_black_24dp);
+            favoriteIv.setImageResource(R.drawable.ic_star_border_black_24dp);
         }
-        favoriteImage.setOnClickListener(new View.OnClickListener() {
+        favoriteIv.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
 
                 //Switch the favorite display when clicked
                 if (mFavorite == 1) {
                     mFavorite = 0;
-                    favoriteImage.setImageResource(R.drawable.ic_star_border_black_24dp);
+                    favoriteIv.setImageResource(R.drawable.ic_star_border_black_24dp);
 
                 } else {
                     mFavorite = 1;
-                    favoriteImage.setImageResource(R.drawable.ic_star_black_24dp);
+                    favoriteIv.setImageResource(R.drawable.ic_star_black_24dp);
                 }
 
                 //Update the database entry with the favorite value
@@ -171,19 +248,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
             }
         });
 
-
-        loadMovieReviewsAndTrailers();
-    }
-    @Override protected void onResume() {
-        super.onResume();
-        if (mLoadedTrailers) hideLoadingIndicator();
-    }
-
-    public void loadMovieReviewsAndTrailers() {
-        LoaderManager loaderManager = getSupportLoaderManager();
-        Loader<String> WebSearchLoader = loaderManager.getLoader(MOVIE_DETAILS_LOADER);
-        if (WebSearchLoader == null) loaderManager.initLoader(MOVIE_DETAILS_LOADER, null, this);
-        else loaderManager.restartLoader(MOVIE_DETAILS_LOADER, null, this);
     }
 
     //Http request asynctask loader
@@ -191,10 +255,13 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         return new AsyncTaskLoader<String>(getApplicationContext()) {
             @Override protected void onStartLoading() {
                 //if (args == null) return;
-                showLoadingIndicator();
-                mLoadedTrailers = false;
-                if (!NetworkUtilities.isInternetAvailable(getContext())) NetworkUtilities.tellUserInternetIsUnavailable(getApplicationContext());
-                forceLoad();
+                if (!mLoadedTrailers) {
+                    showLoadingIndicator();
+                    mLoadedTrailers = false;
+                    if (!NetworkUtilities.isInternetAvailable(getContext()))
+                        NetworkUtilities.tellUserInternetIsUnavailable(getApplicationContext());
+                    forceLoad();
+                }
             }
             @Override public String loadInBackground() {
                 String trailersQueryResult = "";
@@ -231,16 +298,15 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
 
         //Create the Trailers layout
         if (mTrailers != null) {
-            RecyclerView trailersContainer = findViewById(R.id.trailers_container);
             final List<Videos.Results> trailers = mTrailers.getResults();
 
             int numberOfColumns;
             if (trailers.size() == 0) {
                 numberOfColumns = 1;
                 String text = getResources().getString(R.string.no_trailers);
-                trailersContainer.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
+                trailersContainerRv.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
                 TrailersRecycleViewAdapter mTrailersRecycleViewAdapter = new TrailersRecycleViewAdapter(this, trailers, text);
-                trailersContainer.setAdapter(mTrailersRecycleViewAdapter);
+                trailersContainerRv.setAdapter(mTrailersRecycleViewAdapter);
             }
             else {
                 numberOfColumns = 3;
@@ -256,24 +322,24 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
                 int totalHeightPixels = numberOfRows * rowHeightPixels;
 
                 LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, totalHeightPixels);
-                trailersContainer.setLayoutParams(params);
+                trailersContainerRv.setLayoutParams(params);
 
                 //Set the adapter
-                trailersContainer.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
+                trailersContainerRv.setLayoutManager(new GridLayoutManager(this, numberOfColumns));
                 TrailersRecycleViewAdapter mTrailersRecycleViewAdapter = new TrailersRecycleViewAdapter(this, trailers, "");
-                trailersContainer.setAdapter(mTrailersRecycleViewAdapter);
+                trailersContainerRv.setAdapter(mTrailersRecycleViewAdapter);
             }
         }
 
         //Create the Reviews layout
         if (mReviews != null) {
-            LinearLayout trailersContainer = findViewById(R.id.reviews_container);
-            trailersContainer.removeAllViews();
+            LinearLayout reviewsContainer = findViewById(R.id.reviews_container);
+            reviewsContainer.removeAllViews();
             List<Reviews.Results> reviews = mReviews.getResults();
             if (reviews.size() == 0) {
                 TextView noReviews = new TextView(getApplicationContext());
                 noReviews.setText(getResources().getString(R.string.no_reviews));
-                trailersContainer.addView(noReviews);
+                reviewsContainer.addView(noReviews);
             }
 
             LinearLayout.LayoutParams delimiterParams = new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1);
@@ -282,32 +348,34 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
                 TextView review = new TextView(getApplicationContext());
                 review.setText(reviews.get(i).getContent());
                 review.setPadding(16,16,16,16);
-                trailersContainer.addView(review);
+                reviewsContainer.addView(review);
 
                 TextView author = new TextView(getApplicationContext());
                 author.setText(reviews.get(i).getAuthor());
                 author.setTypeface(Typeface.defaultFromStyle(Typeface.ITALIC));
                 author.setPadding(16,16,16,64);
-                trailersContainer.addView(author);
+                reviewsContainer.addView(author);
 
                 if (i<reviews.size()-1) {
                     View delimiter = new View(getApplicationContext());
                     delimiter.setLayoutParams(delimiterParams);
                     delimiter.setBackgroundColor(Color.DKGRAY);
-                    trailersContainer.addView(delimiter);
+                    reviewsContainer.addView(delimiter);
                 }
             }
         }
+
+        findViewById(R.id.container_scrollview).setScrollY(mScrollPosition);
     }
     @Override public void onLoaderReset(Loader<String> loader) {
     }
 
     private void showLoadingIndicator() {
-        findViewById(R.id.trailers_loading_indicator).setVisibility(View.VISIBLE);
-        findViewById(R.id.dynamic_layouts_container).setVisibility(View.GONE);
+        trailersLoadingIndicatorPb.setVisibility(View.VISIBLE);
+        dynamicLayoutsContainerLl.setVisibility(View.GONE);
     }
     private void hideLoadingIndicator() {
-        findViewById(R.id.trailers_loading_indicator).setVisibility(View.GONE);
-        findViewById(R.id.dynamic_layouts_container).setVisibility(View.VISIBLE);
+        trailersLoadingIndicatorPb.setVisibility(View.GONE);
+        dynamicLayoutsContainerLl.setVisibility(View.VISIBLE);
     }
 }

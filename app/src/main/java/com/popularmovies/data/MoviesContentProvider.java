@@ -92,7 +92,11 @@ public class MoviesContentProvider extends ContentProvider {
 
         return rowsInserted;
     }
-    @Nullable @Override public Cursor query(@NonNull Uri uri, @Nullable String[] projection, @Nullable String selection, @Nullable String[] selectionArgs, @Nullable String sortOrder) {
+    @Nullable @Override public Cursor query(@NonNull Uri uri,
+                                            @Nullable String[] projection,
+                                            @Nullable String selection,
+                                            @Nullable String[] selectionArgs,
+                                            @Nullable String sortOrder) {
 
         //Get the database
         final SQLiteDatabase db = mDbHelper.getReadableDatabase();
@@ -106,7 +110,13 @@ public class MoviesContentProvider extends ContentProvider {
         //Query the database if the Uri matches the relevant table
         switch (match) {
             case MOVIES:
-                retCursor =  db.query(MoviesDbContract.MoviesDbEntry.TABLE_NAME, projection, selection, selectionArgs, null, null, sortOrder);
+                retCursor =  db.query(MoviesDbContract.MoviesDbEntry.TABLE_NAME,
+                        projection,
+                        selection,
+                        selectionArgs,
+                        null,
+                        null,
+                        sortOrder);
                 break;
             default:
                 throw new UnsupportedOperationException("Unknown uri: " + uri);
@@ -120,7 +130,9 @@ public class MoviesContentProvider extends ContentProvider {
     @Nullable @Override public String getType(@NonNull Uri uri) {
         return null;
     }
-    @Override public int delete(@NonNull Uri uri, @Nullable String selection, @Nullable String[] selectionArgs) {
+    @Override public int delete(@NonNull Uri uri,
+                                @Nullable String selection,
+                                @Nullable String[] selectionArgs) {
 
         //Get the database
         final SQLiteDatabase db = mDbHelper.getWritableDatabase();
@@ -150,7 +162,10 @@ public class MoviesContentProvider extends ContentProvider {
 
         return tasksDeleted;
     }
-    @Override public int update(@NonNull Uri uri, @Nullable ContentValues contentValues, @Nullable String selection, @Nullable String[] selectionArgs) {
+    @Override public int update(@NonNull Uri uri,
+                                @Nullable ContentValues contentValues,
+                                @Nullable String selection,
+                                @Nullable String[] selectionArgs) {
 
         //Get the database
         final SQLiteDatabase db = mDbHelper.getWritableDatabase();

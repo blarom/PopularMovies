@@ -10,7 +10,9 @@ public class MoviesDbHelper extends SQLiteOpenHelper {
 
 
     private static final String DATABASE_NAME = "popularmovies.db";
-    private static final int DATABASE_VERSION = 10;
+    private static final int DATABASE_VERSION = 11;
+    private static final String DATABASE_ALTER_1 = "ALTER TABLE "
+            + MoviesDbEntry.TABLE_NAME + " ADD COLUMN " + MoviesDbEntry.COLUMN_NEW + " TEXT NOT NULL;";
 
     MoviesDbHelper(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -34,6 +36,7 @@ public class MoviesDbHelper extends SQLiteOpenHelper {
                 MoviesDbEntry.COLUMN_ADULT + " INTEGER NOT NULL, " +
                 MoviesDbEntry.COLUMN_OVERVIEW + " TEXT NOT NULL, " +
                 MoviesDbEntry.COLUMN_RELEASE_DATE + " TEXT NOT NULL, " +
+                MoviesDbEntry.COLUMN_LIST_TYPE + " TEXT NOT NULL, " +
                 MoviesDbEntry.COLUMN_FAVORITE + " INTEGER NOT NULL" +
                 "); ";
 
@@ -41,8 +44,17 @@ public class MoviesDbHelper extends SQLiteOpenHelper {
         sqLiteDatabase.execSQL(SQL_CREATE_KEYWORDS_TABLE);
     }
 
-    @Override public void onUpgrade(SQLiteDatabase sqLiteDatabase, int i, int i1) {
-        sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MoviesDbEntry.TABLE_NAME);
+    @Override public void onUpgrade(SQLiteDatabase sqLiteDatabase, int oldVersion, int newVersion) {
+
+        //For users who didn't get the latest update to the database columns
+        if (oldVersion < 11) {
+            sqLiteDatabase.execSQL("ALTER TABLE " + MoviesDbEntry.TABLE_NAME +
+                    " ADD COLUMN " + MoviesDbEntry.COLUMN_LIST_TYPE + " TEXT NOT NULL;");
+            sqLiteDatabase.execSQL("ALTER TABLE " + MoviesDbEntry.TABLE_NAME +
+                    " ADD COLUMN " + MoviesDbEntry.COLUMN_FAVORITE + " INTEGER NOT NULL;");
+        }
+
+        //sqLiteDatabase.execSQL("DROP TABLE IF EXISTS " + MoviesDbEntry.TABLE_NAME);
         onCreate(sqLiteDatabase);
     }
 }

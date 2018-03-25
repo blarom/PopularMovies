@@ -61,8 +61,11 @@ public class MoviesRecycleViewAdapter extends RecyclerView.Adapter<MoviesRecycle
 
         ImageView imageView = holder.imageInRecycleView;
         holder.container.requestLayout();
-        //Picasso.with(mContext).load("http://image.tmdb.org/t/p/" + size + "/" + path).into(imageView);
-        Picasso.with(mContext).load("http://image.tmdb.org/t/p/" + size + "/" + path).into(imageView, new com.squareup.picasso.Callback() {
+        //Picasso.with(mContext).load("http://image.tmdb.org/t/p/" + size + "/" + path).into(posterIv);
+        Picasso.with(mContext)
+                .load("http://image.tmdb.org/t/p/" + size + "/" + path)
+                .error(R.drawable.ic_missing_image)
+                .into(imageView, new com.squareup.picasso.Callback() {
             @Override
             public void onSuccess() {
                 //Inspired from: https://stackoverflow.com/questions/34067472/update-recyclerview-items-height-after-image-was-loaded

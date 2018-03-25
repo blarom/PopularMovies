@@ -9,8 +9,8 @@
     <string name="pref_sort_order_top_rated_label">By Top Rated</string>
     <string name="pref_sort_order_top_rated">sort_order_top_rated</string>
 
-    <string name="pref_preferred_sort_order_key">sort_order</string>
-    <string name="pref_preferred_sort_order_label">Sort Order</string>
+    <string name="pref_preferred_sort_type_key">sort_type</string>
+    <string name="pref_preferred_sort_order_label">Sort Type</string>
 
     <string name="settings">Settings</string>
     <string name="Title">Title</string>

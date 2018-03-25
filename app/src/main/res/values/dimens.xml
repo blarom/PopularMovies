@@ -14,4 +14,8 @@
     <dimen name="DetailsActivitySynopsisLabelSize">16sp</dimen>
     <dimen name="DetailsActivityImageWidth">200dp</dimen>
     <dimen name="trailer_list_item_height">100dp</dimen>
+    <dimen name="details_activity_horizontal_margin">8dp</dimen>
+    <dimen name="details_activity_horizontal_margin_subelement">32dp</dimen>
+    <dimen name="details_activity_vertical_margin_double">16dp</dimen>
+    <dimen name="details_activity_vertical_margin">8dp</dimen>
 </resources>

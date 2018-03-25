@@ -5,7 +5,7 @@
         android:defaultValue="@string/pref_sort_order_popular"
         android:entries="@array/pref_preferred_sort_order_labels"
         android:entryValues="@array/pref_preferred_sort_order_values"
-        android:key="@string/pref_preferred_sort_order_key"
+        android:key="@string/pref_preferred_sort_type_key"
         android:title="@string/pref_preferred_sort_order_label" />
 
     <CheckBoxPreference
