@@ -7,13 +7,16 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
+import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
+import android.support.v7.app.ActionBar;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.GridLayoutManager;
+import android.support.v7.widget.Toolbar;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,7 +24,6 @@ import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
-import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
@@ -40,7 +42,7 @@ import butterknife.ButterKnife;
 
 public class DetailActivity extends AppCompatActivity implements LoaderManager.LoaderCallbacks<String> {
 
-    @BindView(R.id.title_value) TextView titleValueTv;
+    //@BindView(R.id.title_value) TextView titleValueTv;
     @BindView(R.id.synopsis_value) TextView synopsisValueTv;
     @BindView(R.id.rating_value) TextView ratingValueTv;
     @BindView(R.id.release_date_value) TextView releaseDateValueTv;
@@ -68,7 +70,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     private int mMoviesListPosition;
     private int mScrollPosition;
     private int layoutId;
-    private RecyclerView mTrailersRecyclerView;
 
     //Lifecycle methods
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -77,14 +78,8 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
 
         ButterKnife.bind(this);
 
-        if (savedInstanceState != null) {
-            layoutId = savedInstanceState.getInt("layoutId", R.layout.activity_detail);
-            setContentView(layoutId);
-        }
-
-        mLoadedTrailers = false;
-
         retrieveValuesForLayout();
+        setupCollapsingActionBarProperties();
         loadValuesIntoLayout();
         loadMovieReviewsAndTrailers();
     }
@@ -96,7 +91,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         super.onSaveInstanceState(outState);
         outState.putInt(SCROLL_POSITION, findViewById(R.id.container_scrollview).getScrollY());
         outState.putInt(MOVIES_RECYCLERVIEW_POSITION, mMoviesListPosition);
-        outState.putInt("layoutId", layoutId);
     }
     @Override public void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
@@ -122,14 +116,26 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
         return false;
     }
 
-    public void loadMovieReviewsAndTrailers() {
-        if (mLoadedTrailers) hideLoadingIndicator();
-        else {
-            LoaderManager loaderManager = getSupportLoaderManager();
-            Loader<String> WebSearchLoader = loaderManager.getLoader(MOVIE_DETAILS_LOADER);
-            if (WebSearchLoader == null) loaderManager.initLoader(MOVIE_DETAILS_LOADER, null, this);
-            else loaderManager.restartLoader(MOVIE_DETAILS_LOADER, null, this);
+    private void setupCollapsingActionBarProperties() {
+        //Note: new settings in styles.xml/windowActionBar & windowNoTitle
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar!=null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            if (mMovieTitle!=null) actionBar.setTitle(mMovieTitle);
         }
+
+    }
+    public void loadMovieReviewsAndTrailers() {
+
+        mLoadedTrailers = false;
+        hideLoadingIndicator();
+
+        LoaderManager loaderManager = getSupportLoaderManager();
+        Loader<String> WebSearchLoader = loaderManager.getLoader(MOVIE_DETAILS_LOADER);
+        if (WebSearchLoader == null) loaderManager.initLoader(MOVIE_DETAILS_LOADER, null, this);
+        else loaderManager.restartLoader(MOVIE_DETAILS_LOADER, null, this);
     }
     private void retrieveValuesForLayout() {
 
@@ -211,7 +217,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
                     }
                 });
 
-        titleValueTv.setText(mMovieTitle);
+        //titleValueTv.setText(mMovieTitle);
         synopsisValueTv.setText(mPlotSynopsis);
         ratingValueTv.setText(Float.toString(mUserRating));
         releaseDateValueTv.setText(mReleaseDate);
