@@ -7,10 +7,10 @@ import android.database.Cursor;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.support.design.widget.CollapsingToolbarLayout;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.AsyncTaskLoader;
 import android.support.v4.content.Loader;
+import android.support.v4.widget.NestedScrollView;
 import android.support.v7.app.ActionBar;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.app.AppCompatActivity;
@@ -24,6 +24,7 @@ import android.view.ViewTreeObserver;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ProgressBar;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.google.gson.Gson;
@@ -51,6 +52,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     @BindView(R.id.dynamic_layouts_container) LinearLayout dynamicLayoutsContainerLl;
     @BindView(R.id.trailers_loading_indicator) ProgressBar trailersLoadingIndicatorPb;
     @BindView(R.id.trailers_container) RecyclerView trailersContainerRv;
+    @BindView(R.id.container_scrollview) NestedScrollView containerSv;
 
     private static final String MOVIES_CONTENT_PROVIDER_INDEX = "movies_content_provider_index";
     private static final String MOVIES_RECYCLERVIEW_POSITION = "movies_recyclerview_position";
@@ -69,7 +71,6 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     private int mMovieId;
     private int mMoviesListPosition;
     private int mScrollPosition;
-    private int layoutId;
 
     //Lifecycle methods
     @Override protected void onCreate(Bundle savedInstanceState) {
@@ -89,14 +90,14 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
     }
     @Override public void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putInt(SCROLL_POSITION, findViewById(R.id.container_scrollview).getScrollY());
+        outState.putInt(SCROLL_POSITION, containerSv.getScrollY());
         outState.putInt(MOVIES_RECYCLERVIEW_POSITION, mMoviesListPosition);
     }
     @Override public void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         if(savedInstanceState != null) {
             mScrollPosition = savedInstanceState.getInt(SCROLL_POSITION);
-            findViewById(R.id.container_scrollview).setScrollY(mScrollPosition);
+            containerSv.setScrollY(mScrollPosition);
             mMoviesListPosition = savedInstanceState.getInt(MOVIES_RECYCLERVIEW_POSITION);
         }
     }
@@ -371,7 +372,7 @@ public class DetailActivity extends AppCompatActivity implements LoaderManager.L
             }
         }
 
-        findViewById(R.id.container_scrollview).setScrollY(mScrollPosition);
+        containerSv.setScrollY(mScrollPosition);
     }
     @Override public void onLoaderReset(Loader<String> loader) {
     }

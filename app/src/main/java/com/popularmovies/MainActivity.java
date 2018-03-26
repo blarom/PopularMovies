@@ -38,7 +38,6 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
 
     private static final int MOVIE_LIST_LOADER = 101;
     private static final String MOVIES_CONTENT_PROVIDER_INDEX = "movies_content_provider_index";
-    private static final String RECYCLERVIEW_POSITION = "recyclerview_position";
     private static final String MOVIES_RECYCLERVIEW_POSITION = "movies_recyclerview_position";
     private static final int DETAILS_ACTIVITY_CODE = 666;
     Movies mMovies;
@@ -106,13 +105,14 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
         super.onSaveInstanceState(outState);
         //Adapted from: https://stackoverflow.com/questions/27816217/how-to-save-recyclerviews-scroll-position-using-recyclerview-state
         GridLayoutManager layoutManager = ((GridLayoutManager) mMoviesRecyclerView.getLayoutManager());
-        outState.putInt(RECYCLERVIEW_POSITION, layoutManager.findFirstVisibleItemPosition());
+        mStoredRecyclerViewPosition = layoutManager.findFirstVisibleItemPosition();
+        outState.putInt(MOVIES_RECYCLERVIEW_POSITION, mStoredRecyclerViewPosition);
     }
     @Override public void onRestoreInstanceState(Bundle savedInstanceState) {
         super.onRestoreInstanceState(savedInstanceState);
         //Adapted from: https://stackoverflow.com/questions/27816217/how-to-save-recyclerviews-scroll-position-using-recyclerview-state
         if(savedInstanceState != null) {
-            mStoredRecyclerViewPosition = savedInstanceState.getInt(RECYCLERVIEW_POSITION);
+            mStoredRecyclerViewPosition = savedInstanceState.getInt(MOVIES_RECYCLERVIEW_POSITION);
             mMoviesRecyclerView.scrollToPosition(mStoredRecyclerViewPosition);
         }
     }
@@ -197,6 +197,7 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
             mListShownToUserCursor = getListShownToUser();
             mMoviesRecycleViewAdapter.swapCursor(mListShownToUserCursor);
             mMoviesRecycleViewAdapter.notifyDataSetChanged();
+            mMoviesRecyclerView.scrollToPosition(mStoredRecyclerViewPosition);
 
             ((SwipeRefreshLayout) findViewById(R.id.swipe_container)).setRefreshing(false);
         }
@@ -333,6 +334,8 @@ public class MainActivity extends AppCompatActivity implements LoaderManager.Loa
     }
     private void startMovieDetailsActivity(int movieIdFromCursor) {
         Intent startDetailsActivity = new Intent(this, DetailActivity.class);
+        GridLayoutManager layoutManager = ((GridLayoutManager) mMoviesRecyclerView.getLayoutManager());
+        mStoredRecyclerViewPosition = layoutManager.findFirstVisibleItemPosition();
         startDetailsActivity.putExtra(MOVIES_CONTENT_PROVIDER_INDEX, movieIdFromCursor);
         startDetailsActivity.putExtra(MOVIES_RECYCLERVIEW_POSITION, mStoredRecyclerViewPosition);
         startActivityForResult(startDetailsActivity, DETAILS_ACTIVITY_CODE);
